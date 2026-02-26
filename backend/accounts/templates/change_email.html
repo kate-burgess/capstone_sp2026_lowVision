@@ -1,0 +1,38 @@
+{% set title = _("Reset Email Address") %}
+
+{% extends "base.html" %}
+{% from 'bootstrap5/form.html' import render_field %}
+{% from 'bootstrap5/utils.html' import render_messages %}
+
+{% block body %}
+
+<main class="my-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <section class="col-sm-11 col-md-8 col-lg-6 col-xl-5">
+                <div class="card shadow-sm mb-4">
+                    <div class="p-4">
+                        <form action="{{ url_for('accounts.change_email') }}" method="post">
+                            <div class="mb-4">
+                                <h2 class="card-title text-center">{{ _('Change Your Email Address') }}</h2>
+                                {{ render_messages() }}
+                                <p class="text-muted">{{ _('To change your email enter new email address and you will
+                                    receive an confirmation link to confirm your email.') }}</p>
+                            </div>
+                            {{ form.hidden_tag() }}
+                            {{ render_field(form.email, placeholder=_("Enter email address"), autofocus="true") }}
+                            {{ render_field(form.remember) }}
+                            {{ render_field(form.submit, class='w-100 mb-2') }}
+                        </form>
+                    </div>
+                </div>
+                <p class="text-center">
+                    <a href="{{ url_for('accounts.index') }}" class="text-decoration-none">
+                        {{ _('Back to Home') }}</a>
+                </p>
+            </section>
+        </div>
+    </div>
+</main>
+
+{% endblock %}

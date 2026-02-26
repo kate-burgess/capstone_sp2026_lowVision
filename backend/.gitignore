@@ -1,0 +1,20 @@
+# for Byte-compiled / optimized / DLL files.
+__pycache__/
+*.py[cod]
+*$py.class
+.pyc
+
+# for environment and virtual environment python. 
+.env
+.venv
+venv/
+env/
+accounts/static/assets/uploads/*
+!accounts/static/assets/uploads/.gitkeep
+
+# for database migrations and local db files.
+migrations/
+*.db
+*.sqlite3
+db.sqlite3
+sqlite3.*
