@@ -2,7 +2,6 @@ import logging
 from logging.config import fileConfig
 
 from flask import current_app
-
 from alembic import context
 
 # this is the Alembic Config object, which provides
@@ -45,35 +44,10 @@ def get_metadata():
     return target_db.metadata
 
 
-# --- NEW: filter what Alembic will "see" during autogenerate ---
-SUPABASE_INTERNAL_SCHEMAS = {"auth", "storage", "realtime", "extensions"}
-
-#If you want Alembic to IGNORE certain public tables (and never try to drop/create/alter them),
-#list them here. Leave empty if you DO want Alembic to manage them.
-IGNORE_PUBLIC_TABLES = {
-    # "user_profiles",
-    # "grocery_lists",
-    # "grocery_items",
-}
-
-
+# OPTION A (Supabase controls ALL tables):
+# Alembic should never autogenerate or manage ANY schema objects.
 def include_object(obj, name, type_, reflected, compare_to):
-    """
-    Controls what Alembic includes during autogenerate.
-
-    - Excludes Supabase-managed schemas (auth/storage/realtime/extensions)
-    - Optionally excludes specific public tables (IGNORE_PUBLIC_TABLES)
-    """
-    # Exclude objects in Supabase internal schemas
-    schema = getattr(obj, "schema", None)
-    if schema in SUPABASE_INTERNAL_SCHEMAS:
-        return False
-
-    # Exclude selected public tables if configured
-    if type_ == "table" and name in IGNORE_PUBLIC_TABLES:
-        return False
-
-    return True
+    return False
 
 
 def run_migrations_offline():
@@ -93,6 +67,7 @@ def run_migrations_offline():
         target_metadata=get_metadata(),
         literal_binds=True,
         include_object=include_object,
+        # IMPORTANT: do not pass compare_type here; Flask-Migrate may pass it via configure_args
     )
 
     with context.begin_transaction():
@@ -106,15 +81,14 @@ def run_migrations_online():
     and associate a connection with the context.
     """
 
-    # this callback is used to prevent an auto-migration from being generated
-    # when there are no changes to the schema
-    # reference: http://alembic.zzzcomputing.com/en/latest/cookbook.html
+    # This callback prevents creating a revision when there are no ops.
+    # With include_object returning False, autogenerate will be empty.
     def process_revision_directives(context, revision, directives):
         if getattr(config.cmd_opts, "autogenerate", False):
             script = directives[0]
             if script.upgrade_ops.is_empty():
                 directives[:] = []
-                logger.info("No changes in schema detected.")
+                logger.info("No changes in schema detected (Supabase owns all tables).")
 
     connectable = get_engine()
 
