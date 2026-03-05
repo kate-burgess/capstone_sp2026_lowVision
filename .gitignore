@@ -1,5 +1,9 @@
 # Miscellaneous
 *.class
+backup/
+EasyOCR/venv/
+venv/
+__pycache__/
 *.log
 *.pyc
 *.swp
