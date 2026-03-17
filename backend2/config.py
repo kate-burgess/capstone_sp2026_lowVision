@@ -89,6 +89,10 @@ class BaseConfig:
     TEST_USER_EMAIL = "testuser@example.com"
     TEST_USER_PASSWORD = "Test@1234"
 
+    # Supabase JWT verification
+    SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+    SUPABASE_JWT_AUDIENCE = os.getenv("SUPABASE_JWT_AUDIENCE")
+
 
 class Development(BaseConfig):
     DEBUG = True

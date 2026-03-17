@@ -15,6 +15,7 @@ from werkzeug.exceptions import (
 from flask import Flask, make_response
 from flask import redirect, request, session, url_for
 from flask_babel import lazy_gettext as _
+from flask_cors import CORS
 
 
 def create_app(config_type):
@@ -22,6 +23,9 @@ def create_app(config_type):
     Create and configure the Flask application instance.
     """
     app = Flask(__name__)
+
+    # Allow the Flutter web app (running on localhost) to call our API routes.
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     # application configuration.
     config_application(app, config_type)

@@ -45,7 +45,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
   }
 
   String get _ocrBaseUrl =>
-      kIsWeb ? 'http://localhost:5000' : 'http://10.0.2.2:5000';
+      kIsWeb ? 'http://localhost:5001' : 'http://10.0.2.2:5001';
 
   Future<void> _performOCR() async {
     setState(() {

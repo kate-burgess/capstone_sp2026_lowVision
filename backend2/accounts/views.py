@@ -6,6 +6,9 @@ from requests.exceptions import ConnectionError
 from werkzeug.exceptions import InternalServerError
 from authlib.integrations.flask_client import OAuthError
 from authlib.integrations.base_client.errors import TokenExpiredError
+import jwt
+from jwt import InvalidTokenError
+from sqlalchemy import text
 
 from flask import Blueprint, Response
 from flask import abort, current_app, render_template, request, redirect, url_for, flash
@@ -72,48 +75,14 @@ def login_guest_user() -> Response:
 
 
 @accounts.route("/register", methods=["GET", "POST"])
-@authentication_redirect
-@limiter.limit("3/minute", methods=["POST"])
 def register() -> Response:
     """
-    Handling user registration.
-    If the user is already authenticated, they are redirected to the index page.
+    Legacy registration route disabled.
 
-    This view handles both GET and POST requests:
-    - GET: Renders the registration form and template.
-    - POST: Processes the registration form, creates a new user, and sends a confirmation email.
-
-    :return: Renders the registration template on GET request
-    or redirects to login after successful registration.
+    The app now relies on Supabase Auth for signup, so this endpoint
+    always returns 404 to avoid touching the old local `user` table.
     """
-    form = RegisterForm()
-
-    if form.validate_on_submit():
-        username = form.data.get("username")
-        first_name = form.data.get("first_name")
-        last_name = form.data.get("last_name")
-        email = form.data.get("email")
-        password = form.data.get("password")
-
-        # Attempt to create a new user and save to the database.
-        user = User.create(
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            password=password,
-        )
-
-        # Sends account confirmation mail to the user.
-        user.send_confirmation()
-
-        flash(
-            _("A confirmation link sent to your email. Please verify your account."),
-            "success",
-        )
-        return redirect(url_for("accounts.login"))
-
-    return render_template("register.html", form=form)
+    return abort(HTTPStatus.NOT_FOUND)
 
 
 @accounts.route("/login", methods=["GET", "POST"])
@@ -780,3 +749,73 @@ def remove_oauth_provider() -> Response:
 
     flash(f"Failed to remove {provider} provider.", "error")
     return redirect(url_for("accounts.settings"))
+
+
+@accounts.route("/api/user-profile", methods=["POST"])
+def upsert_supabase_user_profile() -> Response:
+    """
+    Create or update a Supabase-backed user profile.
+
+    Expects:
+      - Authorization: Bearer <supabase_jwt>
+      - JSON body with optional fields:
+          full_name, dietary_preferences, allergies
+
+    The Supabase JWT's `sub` claim is used as the user id and mapped
+    directly to public.user_profiles.id (which FKs to auth.users.id).
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return Response("Missing or invalid Authorization header.", status=HTTPStatus.UNAUTHORIZED)
+
+    token = auth_header.split(" ", 1)[1].strip()
+
+    jwt_secret = current_app.config.get("SUPABASE_JWT_SECRET")
+    jwt_aud = current_app.config.get("SUPABASE_JWT_AUDIENCE")
+
+    if not jwt_secret:
+        return Response("Server is missing SUPABASE_JWT_SECRET configuration.", status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+    try:
+        payload = jwt.decode(
+            token,
+            jwt_secret,
+            algorithms=["HS256"],
+            audience=jwt_aud if jwt_aud else None,
+            options={"verify_aud": bool(jwt_aud)},
+        )
+    except InvalidTokenError:
+        return Response("Invalid Supabase token.", status=HTTPStatus.UNAUTHORIZED)
+
+    user_id = payload.get("sub")
+    if not user_id:
+        return Response("Token missing subject (user id).", status=HTTPStatus.UNAUTHORIZED)
+
+    body = request.get_json(silent=True) or {}
+    full_name = body.get("full_name", "")
+    dietary_preferences = body.get("dietary_preferences", "")
+    allergies = body.get("allergies", "")
+
+    stmt = text(
+        """
+        INSERT INTO public.user_profiles (id, full_name, dietary_preferences, allergies)
+        VALUES (:id::uuid, :full_name, :dietary_preferences, :allergies)
+        ON CONFLICT (id) DO UPDATE
+        SET full_name = EXCLUDED.full_name,
+            dietary_preferences = EXCLUDED.dietary_preferences,
+            allergies = EXCLUDED.allergies;
+        """
+    )
+
+    db.session.execute(
+        stmt,
+        {
+            "id": user_id,
+            "full_name": full_name,
+            "dietary_preferences": dietary_preferences,
+            "allergies": allergies,
+        },
+    )
+    db.session.commit()
+
+    return Response(status=HTTPStatus.NO_CONTENT)
