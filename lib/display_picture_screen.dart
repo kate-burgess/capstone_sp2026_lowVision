@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'ocr_config.dart';
+
 class DisplayPictureScreen extends StatelessWidget {
   const DisplayPictureScreen({super.key, required this.imageBytes});
 
@@ -44,9 +46,6 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
     _performOCR();
   }
 
-  String get _ocrBaseUrl =>
-      kIsWeb ? 'http://localhost:5001' : 'http://10.0.2.2:5001';
-
   Future<void> _performOCR() async {
     setState(() {
       _isProcessing = true;
@@ -55,8 +54,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
     });
 
     try {
-      final uri = Uri.parse('$_ocrBaseUrl/extract-text');
-      final request = http.MultipartRequest('POST', uri);
+      final request = http.MultipartRequest('POST', ocrMultipartUri());
       request.files.add(
         http.MultipartFile.fromBytes(
           'image',
@@ -82,7 +80,8 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
     } catch (e) {
       setState(() {
         _error =
-            'Could not connect to OCR server. Make sure ocr_server.py is running.\n\nDetails: $e';
+            'Could not reach the OCR service. For local dev, run ocr_server.py; '
+            'for MAGIC, build with --dart-define=OCR_BASE_URL=<your-server>.\n\nDetails: $e';
       });
     } finally {
       setState(() => _isProcessing = false);

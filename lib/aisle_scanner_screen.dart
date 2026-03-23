@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 
+import 'ocr_config.dart';
 import 'take_picture_screen.dart';
 
 class _Item {
@@ -130,10 +131,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       _ocrError = null;
     });
     try {
-      final req = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://localhost:5001/extract-text'),
-      )..files.add(
+      final req = http.MultipartRequest('POST', ocrMultipartUri())..files.add(
           http.MultipartFile.fromBytes('image', bytes, filename: 'img.png'));
       final res = await req.send();
       final body = await res.stream.bytesToString();
@@ -145,7 +143,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       return null;
     } catch (_) {
       setState(() => _ocrError =
-          'Cannot reach OCR server. Make sure ocr_server.py is running on port 5001.');
+          'Cannot reach OCR service. For local dev run ocr_server.py; for MAGIC use --dart-define=OCR_BASE_URL=<url>.');
       return null;
     } finally {
       if (mounted) setState(() => _ocrLoading = false);
