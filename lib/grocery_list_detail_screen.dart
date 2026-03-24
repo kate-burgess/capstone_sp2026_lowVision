@@ -153,30 +153,38 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
           children: [
             ListTile(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              leading: const CircleAvatar(
-                child: Icon(Icons.keyboard_alt_outlined),
+                  borderRadius: BorderRadius.circular(14)),
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xFF00E5FF),
+                child: const Icon(Icons.keyboard_alt_outlined,
+                    color: Colors.black),
               ),
-              title: const Text('Type it manually'),
-              subtitle: const Text('Fill in item name and category'),
+              title: const Text('Type it manually',
+                  style: TextStyle(fontSize: 20)),
+              subtitle: const Text('Fill in item name and category',
+                  style: TextStyle(fontSize: 16)),
               onTap: () {
                 Navigator.pop(ctx);
                 _showManualAddDialog();
               },
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             ListTile(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(14)),
               leading: CircleAvatar(
                 backgroundColor:
-                    _speechAvailable ? Colors.deepPurple : Colors.grey,
-                child: const Icon(Icons.mic, color: Colors.white),
+                    _speechAvailable ? const Color(0xFFFFD54F) : Colors.grey,
+                child: Icon(Icons.mic,
+                    color: _speechAvailable ? Colors.black : Colors.white),
               ),
-              title: const Text('Speak it'),
-              subtitle: Text(_speechAvailable
-                  ? 'Voice guided — TTS will ask you questions'
-                  : 'Not available in this browser'),
+              title: const Text('Speak it',
+                  style: TextStyle(fontSize: 20)),
+              subtitle: Text(
+                  _speechAvailable
+                      ? 'Voice guided — TTS will ask you questions'
+                      : 'Not available in this browser',
+                  style: const TextStyle(fontSize: 16)),
               enabled: _speechAvailable,
               onTap: _speechAvailable
                   ? () {
@@ -283,13 +291,14 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
     }
     final sortedCategories = grouped.keys.toList()..sort();
 
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.listTitle),
         actions: [
           IconButton(
             tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, size: 28),
             onPressed: _fetchItems,
           ),
         ],
@@ -298,22 +307,37 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(_error!,
+                        style: theme.textTheme.bodyLarge
+                            ?.copyWith(color: theme.colorScheme.error),
+                        textAlign: TextAlign.center),
+                  ),
                 )
               : _items.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.shopping_basket_outlined,
-                              size: 72, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text(
-                            'No items yet.\nTap + to add your first item.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shopping_basket_outlined,
+                                size: 80,
+                                color: theme.colorScheme.primary
+                                    .withOpacity(0.5)),
+                            const SizedBox(height: 20),
+                            Text('No items yet',
+                                style: theme.textTheme.headlineMedium),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tap the + button to add\nyour first item.',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyLarge
+                                  ?.copyWith(color: Colors.white60),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -327,13 +351,13 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                           children: [
                             Padding(
                               padding:
-                                  const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                                  const EdgeInsets.fromLTRB(20, 20, 20, 6),
                               child: Text(
                                 cat.toUpperCase(),
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.grey[600],
+                                  color: theme.colorScheme.primary,
                                   letterSpacing: 1.2,
                                 ),
                               ),
@@ -350,29 +374,34 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                                 title: Text(
                                   item['name'] as String? ?? '',
                                   style: TextStyle(
+                                    fontSize: 20,
                                     decoration: checked
                                         ? TextDecoration.lineThrough
                                         : null,
-                                    color: checked ? Colors.grey : null,
+                                    color: checked
+                                        ? Colors.white38
+                                        : Colors.white,
                                   ),
                                 ),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.red),
+                                  tooltip: 'Delete item',
+                                  icon: Icon(Icons.delete_outline,
+                                      size: 28,
+                                      color: theme.colorScheme.error),
                                   onPressed: () =>
                                       _deleteItem(item['id'] as String),
                                 ),
                               );
                             }),
-                            const Divider(height: 1),
+                            const Divider(),
                           ],
                         );
                       },
                     ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.large(
         onPressed: _showInputModeDialog,
         tooltip: 'Add item',
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 36),
       ),
     );
   }
@@ -553,17 +582,18 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                   : _step == _VoiceStep.category
                       ? 'Step 2 of 2 — Category'
                       : 'Done!',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: const TextStyle(color: Colors.white60, fontSize: 18),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
             // Prompt
             Text(
               _prompt.isEmpty ? 'Starting…' : _prompt,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
 
             // Animated mic / speaker icon
             AnimatedSwitcher(
@@ -572,37 +602,45 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                   ? Column(
                       key: const ValueKey('listening'),
                       children: [
-                        const Icon(Icons.mic, size: 56, color: Colors.deepPurple),
-                        const SizedBox(height: 6),
+                        const Icon(Icons.mic, size: 64, color: Color(0xFF00E5FF)),
+                        const SizedBox(height: 8),
                         const Text('Listening…',
-                            style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.w600)),
+                            style: TextStyle(
+                                color: Color(0xFF00E5FF),
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600)),
                         if (_recognized.isNotEmpty) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           Text(
                             '"$_recognized"',
-                            style: const TextStyle(fontStyle: FontStyle.italic),
+                            style: const TextStyle(
+                                fontStyle: FontStyle.italic,
+                                fontSize: 20,
+                                color: Colors.white70),
                             textAlign: TextAlign.center,
                           ),
                         ],
                       ],
                     )
                   : _isSpeaking
-                      ? Column(
-                          key: const ValueKey('speaking'),
-                          children: const [
-                            Icon(Icons.volume_up, size: 56, color: Colors.indigo),
-                            SizedBox(height: 6),
+                      ? const Column(
+                          key: ValueKey('speaking'),
+                          children: [
+                            Icon(Icons.volume_up,
+                                size: 64, color: Color(0xFFFFD54F)),
+                            SizedBox(height: 8),
                             Text('Speaking…',
                                 style: TextStyle(
-                                    color: Colors.indigo,
+                                    color: Color(0xFFFFD54F),
+                                    fontSize: 20,
                                     fontWeight: FontWeight.w600)),
                           ],
                         )
                       : const Icon(
                           key: ValueKey('idle'),
                           Icons.hourglass_top,
-                          size: 56,
-                          color: Colors.grey,
+                          size: 64,
+                          color: Colors.white38,
                         ),
             ),
             const SizedBox(height: 24),

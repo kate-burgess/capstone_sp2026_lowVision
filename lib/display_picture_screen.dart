@@ -90,13 +90,15 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Photo & Extracted Text'),
         actions: [
           IconButton(
+            tooltip: 'Re-run OCR',
             onPressed: _isProcessing ? null : _performOCR,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, size: 28),
           ),
         ],
       ),
@@ -117,42 +119,36 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
             flex: 1,
             child: Container(
               width: double.infinity,
-              color: Colors.grey[900],
-              padding: const EdgeInsets.all(16),
+              color: const Color(0xFF1E1E2C),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Text(
-                        'Extracted Text',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
+                      Text('Extracted Text',
+                          style: theme.textTheme.headlineMedium),
+                      const SizedBox(width: 10),
                       if (_isProcessing)
                         const SizedBox(
-                          width: 18,
-                          height: 18,
+                          width: 22,
+                          height: 22,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 3,
+                            color: Color(0xFF00E5FF),
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Expanded(
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFF121212),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white12, width: 1),
                       ),
                       child: SingleChildScrollView(
                         child: Text(
@@ -164,23 +160,20 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                                   : _extractedText),
                           style: TextStyle(
                             color: _error != null
-                                ? Colors.red[300]
-                                : Colors.green[300],
-                            fontSize: 16,
+                                ? theme.colorScheme.error
+                                : const Color(0xFF00E5FF),
+                            fontSize: 20,
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.add_photo_alternate),
-                      label: Text(
-                        kIsWeb ? 'Pick another image' : 'Take Another Picture',
-                      ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.add_photo_alternate),
+                    label: Text(
+                      kIsWeb ? 'Pick Another Image' : 'Take Another Picture',
                     ),
                   ),
                 ],

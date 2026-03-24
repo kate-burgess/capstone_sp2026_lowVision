@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'display_picture_screen.dart';
 import 'save_image_stub.dart' if (dart.library.html) 'save_image_web.dart';
@@ -25,6 +26,7 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
   late Future<void> _initializeControllerFuture;
   bool _isTakingPicture = false;
   String? _error;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -77,6 +79,21 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
     }
   }
 
+  Future<void> _pickFromGallery() async {
+    final xFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (xFile == null) return;
+    final bytes = await xFile.readAsBytes();
+    if (bytes.isEmpty || !mounted) return;
+
+    if (kIsWeb) {
+      final name = xFile.name.isNotEmpty ? xFile.name : _defaultPhotoName();
+      saveImageToDownloads(bytes, name);
+    }
+
+    if (!mounted) return;
+    await DisplayPictureScreen.push(context, bytes);
+  }
+
   String _defaultPhotoName() {
     final now = DateTime.now();
     return 'ocr_photo_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}.png';
@@ -110,10 +127,7 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Camera'),
-        backgroundColor: Colors.black87,
-      ),
+      appBar: AppBar(title: const Text('Camera')),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -123,18 +137,24 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
               if (snapshot.connectionState == ConnectionState.done) {
                 if (snapshot.hasError) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Camera error: ${snapshot.error}'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => setState(() {
-                            _initializeControllerFuture = _controller.initialize();
-                          }),
-                          child: const Text('Retry'),
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Camera error: ${snapshot.error}',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              textAlign: TextAlign.center),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () => setState(() {
+                              _initializeControllerFuture =
+                                  _controller.initialize();
+                            }),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -146,34 +166,52 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 100,
+            bottom: 120,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Text(
-                  'Point at text, then tap the button to take a photo',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
+                  'Point at text, then tap to capture',
+                  style: TextStyle(color: Colors.white, fontSize: 20),
                 ),
               ),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _takePicture,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        child: _isTakingPicture
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.camera_alt, size: 32),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Semantics(
+            label: 'Pick image from gallery',
+            child: FloatingActionButton(
+              heroTag: 'gallery',
+              onPressed: _pickFromGallery,
+              child: const Icon(Icons.photo_library, size: 30),
+            ),
+          ),
+          const SizedBox(width: 28),
+          Semantics(
+            label: 'Take photo',
+            child: FloatingActionButton.large(
+              heroTag: 'camera',
+              onPressed: _takePicture,
+              child: _isTakingPicture
+                  ? const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 3, color: Colors.black),
+                    )
+                  : const Icon(Icons.camera_alt, size: 40),
+            ),
+          ),
+        ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );

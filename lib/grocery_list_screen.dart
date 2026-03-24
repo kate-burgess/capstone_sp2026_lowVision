@@ -135,13 +135,14 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Grocery Lists'),
         actions: [
           IconButton(
             tooltip: 'Edit profile',
-            icon: const Icon(Icons.person_outline),
+            icon: const Icon(Icons.person_outline, size: 28),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                   builder: (_) => const ProfileSetupScreen(isEditing: true)),
@@ -149,14 +150,14 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
           ),
           IconButton(
             tooltip: 'Go to camera / OCR',
-            icon: const Icon(Icons.camera_alt),
+            icon: const Icon(Icons.camera_alt, size: 28),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const TakePictureScreen()),
             ),
           ),
           IconButton(
             tooltip: 'Sign out',
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, size: 28),
             onPressed: _signOut,
           ),
         ],
@@ -165,101 +166,133 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: _fetchLists,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                      ),
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!,
+                            style: theme.textTheme.bodyLarge
+                                ?.copyWith(color: theme.colorScheme.error),
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: _fetchLists,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : _lists.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.shopping_cart_outlined, size: 72, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No lists yet.\nTap + to create your first grocery list.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.shopping_cart_outlined,
+                                size: 80,
+                                color: theme.colorScheme.primary
+                                    .withOpacity(0.5)),
+                            const SizedBox(height: 20),
+                            Text(
+                              'No lists yet',
+                              style: theme.textTheme.headlineMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tap the + button to create\nyour first grocery list.',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyLarge
+                                  ?.copyWith(color: Colors.white60),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : RefreshIndicator(
                       onRefresh: _fetchLists,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 16),
                         itemCount: _lists.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (_, i) {
                           final list = _lists[i];
                           final listId = list['id'] as String;
-                          final listTitle = list['title'] as String? ?? 'Untitled';
-                          return ListTile(
-                            leading: const Icon(Icons.list_alt),
-                            title: Text(listTitle),
-                            subtitle: list['created_at'] != null
-                                ? Text(
-                                    _formatDate(list['created_at'] as String),
-                                    style: const TextStyle(fontSize: 12),
-                                  )
-                                : null,
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Start guided shopping mode for this list
-                                IconButton(
-                                  tooltip: 'Start shopping',
-                                  icon: const Icon(Icons.shopping_cart,
-                                      color: Colors.deepPurple),
-                                  onPressed: () async {
-                                    // Fetch items for this list then open aisle scanner
-                                    try {
-                                      final items = await supabase
-                                          .from('grocery_items')
-                                          .select()
-                                          .eq('list_id', listId)
-                                          .order('name');
-                                      if (!context.mounted) return;
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => AisleScannerScreen(
-                                            listId: listId,
-                                            listTitle: listTitle,
-                                            items: List<Map<String, dynamic>>.from(items),
+                          final listTitle =
+                              list['title'] as String? ?? 'Untitled';
+                          return Card(
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              leading: Icon(Icons.list_alt,
+                                  size: 32,
+                                  color: theme.colorScheme.primary),
+                              title: Text(listTitle,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w600)),
+                              subtitle: list['created_at'] != null
+                                  ? Text(
+                                      _formatDate(
+                                          list['created_at'] as String),
+                                    )
+                                  : null,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Start shopping',
+                                    icon: Icon(Icons.shopping_cart,
+                                        size: 28,
+                                        color: theme.colorScheme.secondary),
+                                    onPressed: () async {
+                                      try {
+                                        final items = await supabase
+                                            .from('grocery_items')
+                                            .select()
+                                            .eq('list_id', listId)
+                                            .order('name');
+                                        if (!context.mounted) return;
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => AisleScannerScreen(
+                                              listId: listId,
+                                              listTitle: listTitle,
+                                              items:
+                                                  List<Map<String, dynamic>>.from(
+                                                      items),
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    } catch (e) {
-                                      if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                            content: Text('Error loading items: $e'),
-                                            backgroundColor: Colors.red),
-                                      );
-                                    }
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.red),
-                                  onPressed: () => _deleteList(listId),
-                                ),
-                              ],
-                            ),
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => GroceryListDetailScreen(
-                                  listId: listId,
-                                  listTitle: listTitle,
+                                        );
+                                      } catch (e) {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Error loading items: $e')),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Delete list',
+                                    icon: Icon(Icons.delete_outline,
+                                        size: 28,
+                                        color: theme.colorScheme.error),
+                                    onPressed: () => _deleteList(listId),
+                                  ),
+                                ],
+                              ),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => GroceryListDetailScreen(
+                                    listId: listId,
+                                    listTitle: listTitle,
+                                  ),
                                 ),
                               ),
                             ),
@@ -267,10 +300,10 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                         },
                       ),
                     ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.large(
         onPressed: _showCreateDialog,
         tooltip: 'New list',
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 36),
       ),
     );
   }

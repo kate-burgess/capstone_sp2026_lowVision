@@ -23,13 +23,139 @@ SupabaseClient get supabase => Supabase.instance.client;
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  static const _seed = Color(0xFF00E5FF);
+
+  static final _colorScheme = ColorScheme.fromSeed(
+    seedColor: _seed,
+    brightness: Brightness.dark,
+    surface: const Color(0xFF121212),
+    onSurface: Colors.white,
+    primary: const Color(0xFF00E5FF),
+    onPrimary: Colors.black,
+    secondary: const Color(0xFFFFD54F),
+    onSecondary: Colors.black,
+    error: const Color(0xFFFF6E6E),
+    onError: Colors.black,
+    surfaceContainerHighest: const Color(0xFF1E1E2C),
+  );
+
+  static const _textTheme = TextTheme(
+    displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+    headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+    bodyLarge: TextStyle(fontSize: 20),
+    bodyMedium: TextStyle(fontSize: 18),
+    labelLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  );
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Low Vision OCR',
+      title: 'Low Vision Daily Companion',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: _colorScheme,
         useMaterial3: true,
+        textTheme: _textTheme,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF1E1E2C),
+          foregroundColor: Colors.white,
+          titleTextStyle: _textTheme.titleLarge?.copyWith(color: Colors.white),
+          centerTitle: true,
+          elevation: 2,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF00E5FF),
+            foregroundColor: Colors.black,
+            minimumSize: const Size(double.infinity, 56),
+            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF00E5FF),
+            side: const BorderSide(color: Color(0xFF00E5FF), width: 2),
+            minimumSize: const Size(double.infinity, 56),
+            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+          ),
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Color(0xFF00E5FF),
+          foregroundColor: Colors.black,
+          largeSizeConstraints: BoxConstraints.tightFor(width: 72, height: 72),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF1E1E2C),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          labelStyle: const TextStyle(fontSize: 18, color: Colors.white70),
+          hintStyle: const TextStyle(fontSize: 18, color: Colors.white38),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Colors.white24, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Colors.white24, width: 2),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFF00E5FF), width: 2),
+          ),
+          errorStyle: const TextStyle(fontSize: 16, color: Color(0xFFFF6E6E)),
+        ),
+        cardTheme: CardThemeData(
+          color: const Color(0xFF1E1E2C),
+          elevation: 4,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        chipTheme: ChipThemeData(
+          backgroundColor: const Color(0xFF1E1E2C),
+          selectedColor: const Color(0xFF00E5FF).withOpacity(0.3),
+          labelStyle: const TextStyle(fontSize: 16, color: Colors.white),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        listTileTheme: const ListTileThemeData(
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          minVerticalPadding: 12,
+          titleTextStyle: TextStyle(fontSize: 20, color: Colors.white),
+          subtitleTextStyle: TextStyle(fontSize: 16, color: Colors.white70),
+        ),
+        checkboxTheme: CheckboxThemeData(
+          fillColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFF00E5FF);
+            }
+            return Colors.white24;
+          }),
+          checkColor: WidgetStateProperty.all(Colors.black),
+          side: const BorderSide(color: Colors.white54, width: 2),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: const Color(0xFF1E1E2C),
+          titleTextStyle: _textTheme.headlineMedium?.copyWith(color: Colors.white),
+          contentTextStyle: _textTheme.bodyLarge?.copyWith(color: Colors.white),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: const Color(0xFF1E1E2C),
+          contentTextStyle: const TextStyle(fontSize: 18, color: Colors.white),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          behavior: SnackBarBehavior.floating,
+        ),
+        dividerTheme: const DividerThemeData(color: Colors.white12, thickness: 1),
       ),
       home: supabase.auth.currentSession != null
           ? const _ProfileGate()

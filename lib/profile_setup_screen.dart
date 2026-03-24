@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'main.dart';
 import 'grocery_list_screen.dart';
 
@@ -155,11 +155,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       );
     }
 
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit profile' : 'Set up your profile'),
+        title: Text(widget.isEditing ? 'Edit Profile' : 'Set Up Your Profile'),
         leading: widget.isEditing
             ? IconButton(
+                tooltip: 'Go back',
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.of(context).pop(),
               )
@@ -169,45 +171,45 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.isEditing ? 'Update your profile' : 'Tell us about yourself',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  widget.isEditing
+                      ? 'Update your profile'
+                      : 'Tell us about yourself',
+                  style: theme.textTheme.headlineMedium,
                 ),
-                const SizedBox(height: 4),
-                const Text(
+                const SizedBox(height: 6),
+                Text(
                   'This helps personalise your grocery lists.',
-                  style: TextStyle(color: Colors.grey),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: Colors.white60),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
-                // Full name
                 TextField(
                   controller: _nameController,
                   decoration: const InputDecoration(
                     labelText: 'Full name',
-                    border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.person_outline),
                   ),
+                  style: theme.textTheme.bodyLarge,
                   textCapitalization: TextCapitalization.words,
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
-                // Dietary preferences
-                const Text(
-                  'Dietary preferences',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                const Text('Select all that apply',
-                    style: TextStyle(color: Colors.grey, fontSize: 13)),
-                const SizedBox(height: 10),
+                Text('Dietary preferences',
+                    style: theme.textTheme.titleLarge),
+                const SizedBox(height: 6),
+                Text('Select all that apply',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: Colors.white60)),
+                const SizedBox(height: 12),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
+                  spacing: 10,
+                  runSpacing: 8,
                   children: _dietOptions.map((opt) {
                     final selected = _selectedDiet.contains(opt);
                     return FilterChip(
@@ -222,25 +224,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           _selectedDiet.remove(opt);
                         }
                       }),
-                      selectedColor:
-                          Theme.of(context).colorScheme.primaryContainer,
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
-                // Allergies
-                const Text(
-                  'Allergies',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                const Text('Select all that apply',
-                    style: TextStyle(color: Colors.grey, fontSize: 13)),
-                const SizedBox(height: 10),
+                Text('Allergies', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 6),
+                Text('Select all that apply',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: Colors.white60)),
+                const SizedBox(height: 12),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
+                  spacing: 10,
+                  runSpacing: 8,
                   children: _allergyOptions.map((opt) {
                     final selected = _selectedAllergies.contains(opt);
                     return FilterChip(
@@ -255,35 +252,41 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           _selectedAllergies.remove(opt);
                         }
                       }),
-                      selectedColor: Colors.red.shade100,
+                      selectedColor:
+                          theme.colorScheme.error.withOpacity(0.3),
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
                 if (_error != null) ...[
-                  Text(_error!,
-                      style: const TextStyle(color: Colors.red, fontSize: 13)),
-                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.error.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(_error!,
+                        style: theme.textTheme.bodyLarge
+                            ?.copyWith(color: theme.colorScheme.error)),
+                  ),
+                  const SizedBox(height: 16),
                 ],
 
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saving ? null : _save,
-                    style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: _saving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text(
-                            widget.isEditing ? 'Save changes' : 'Save and continue',
-                            style: const TextStyle(fontSize: 16)),
-                  ),
+                ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 3, color: Colors.black))
+                      : Text(widget.isEditing
+                          ? 'Save Changes'
+                          : 'Save and Continue'),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 if (!widget.isEditing)
                   Center(
@@ -294,6 +297,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                 MaterialPageRoute(
                                     builder: (_) => const GroceryListScreen()),
                               ),
+                      style: TextButton.styleFrom(
+                        textStyle: theme.textTheme.bodyMedium,
+                      ),
                       child: const Text('Skip for now'),
                     ),
                   ),
