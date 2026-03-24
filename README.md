@@ -73,7 +73,17 @@ You should see the server on `http://127.0.0.1:5000`.
 
 ### 3. OCR (text from camera)
 
-By default the app sends images to the **MAGIC** OCR service (`POST …/ocr`). You do **not** need a local OCR server unless you want offline / local EasyOCR.
+By default the app sends images to the **MAGIC** OCR service (`POST …/extract-text`). You do **not** need a local OCR server unless you want offline / local EasyOCR.
+
+**Run OCR on MAGIC server**
+
+From the directory that contains `app_server_new.py`, restart with:
+
+```bash
+pkill -f app_server_new.py || true; python3 app_server_new.py
+```
+
+This kills any old process first, then starts the server on port `5010`.
 
 **Local EasyOCR instead** — third terminal, from project root:
 
