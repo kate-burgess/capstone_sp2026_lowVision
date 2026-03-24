@@ -113,7 +113,7 @@ Override MAGIC URL anytime with the same flag, e.g.
 |------|------|---------|
 | 1. Flutter dependencies | Once per clone | `flutter pub get` |
 | 2. Flask backend | Whenever you use lists / profiles | `cd backend2` → start `app.py` (see above) |
-| 3. OCR | Optional — only for **local** EasyOCR | `python ocr_server.py` + `--dart-define=OCR_BASE_URL=...` |
+| 3. OCR | Run on MAGIC server | `python3 app_server_new.py` |
 | 4. Run the app | Every session | `flutter run` or `flutter run -d chrome` (etc.) |
 
 ---
