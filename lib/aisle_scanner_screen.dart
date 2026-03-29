@@ -69,6 +69,8 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
   String _shelfOcrText = '';
   List<_Item> _aisleMatches = [];
   List<_Item> _shelfMatches = [];
+  List<_Item> _pendingShelfItems = [];
+  int _shelfPromptIndex = 0;
 
   late List<_Item> _items;
 
@@ -187,14 +189,86 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     }
   }
 
+  String _normalizeToken(String token) {
+    final lower = token.toLowerCase();
+    final normalized = lower
+        .replaceAll('0', 'o')
+        .replaceAll('1', 'l')
+        .replaceAll('3', 'e')
+        .replaceAll('4', 'a')
+        .replaceAll('5', 's')
+        .replaceAll('7', 't')
+        .replaceAll(r'$', 's');
+    if (normalized.length > 3 && normalized.endsWith('s')) {
+      return normalized.substring(0, normalized.length - 1);
+    }
+    return normalized;
+  }
+
+  Set<String> _tokenize(String text) {
+    return text
+        .split(RegExp(r'[^A-Za-z0-9$]+'))
+        .map(_normalizeToken)
+        .where((w) => w.length > 2)
+        .toSet();
+  }
+
+  int _levenshteinDistance(String a, String b, {int maxDistance = 2}) {
+    if ((a.length - b.length).abs() > maxDistance) return maxDistance + 1;
+    if (a == b) return 0;
+    if (a.isEmpty) return b.length;
+    if (b.isEmpty) return a.length;
+
+    var prev = List<int>.generate(b.length + 1, (i) => i);
+    var curr = List<int>.filled(b.length + 1, 0);
+
+    for (int i = 1; i <= a.length; i++) {
+      curr[0] = i;
+      int minInRow = curr[0];
+      for (int j = 1; j <= b.length; j++) {
+        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
+        curr[j] = [
+          prev[j] + 1,
+          curr[j - 1] + 1,
+          prev[j - 1] + cost,
+        ].reduce((x, y) => x < y ? x : y);
+        if (curr[j] < minInRow) minInRow = curr[j];
+      }
+      if (minInRow > maxDistance) return maxDistance + 1;
+      final temp = prev;
+      prev = curr;
+      curr = temp;
+    }
+    return prev[b.length];
+  }
+
+  bool _isFuzzyTokenMatch(String target, String candidate) {
+    if (target == candidate) return true;
+    if (target.length >= 5 &&
+        candidate.length >= 5 &&
+        (target.contains(candidate) || candidate.contains(target))) {
+      return true;
+    }
+    final maxDistance = target.length >= 8 || candidate.length >= 8 ? 2 : 1;
+    return _levenshteinDistance(target, candidate, maxDistance: maxDistance) <=
+        maxDistance;
+  }
+
+  bool _itemMatchesSign(_Item item, Set<String> signWords) {
+    final itemWords = {..._tokenize(item.name), ..._tokenize(item.category)};
+    for (final target in itemWords) {
+      if (signWords.any((word) => _isFuzzyTokenMatch(target, word))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   List<_Item> _matchItems(String ocrText) {
-    final lower = ocrText.toLowerCase();
+    final signWords = _tokenize(ocrText);
     return _items.where((item) {
       if (item.isChecked) return false;
-      final nw = item.name.toLowerCase().split(RegExp(r'\s+'));
-      final cw = item.category.toLowerCase().split(RegExp(r'[\s&]+'));
-      return nw.any((w) => w.length > 2 && lower.contains(w)) ||
-          cw.any((w) => w.length > 2 && lower.contains(w));
+      return _itemMatchesSign(item, signWords);
     }).toList();
   }
 
@@ -215,6 +289,8 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     }
     _aisleOcrText = text;
     _aisleMatches = _matchItems(text);
+    _pendingShelfItems = _aisleMatches.where((i) => !i.isChecked).toList();
+    _shelfPromptIndex = 0;
     for (final item in _aisleMatches) {
       item.aisle ??= _currentAisle;
     }
@@ -225,8 +301,9 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
           'You can scan the shelf or move to the next aisle.');
     } else {
       final names = _aisleMatches.map((i) => i.name).join(', ');
-      await _speak('Aisle $_currentAisle. '
-          '${_aisleMatches.length} item${_aisleMatches.length == 1 ? "" : "s"} here: $names.');
+      await _speak(
+          '${_aisleMatches.length} item${_aisleMatches.length == 1 ? "" : "s"} found in list. Start shopping. '
+          'Aisle $_currentAisle items: $names.');
     }
   }
 
@@ -237,7 +314,13 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       _shelfMatches = [];
     });
     await _restartCamera();
-    await _speak('Point your camera at the shelf and tap Scan Shelf.');
+    if (_pendingShelfItems.isNotEmpty) {
+      final current = _pendingShelfItems[_shelfPromptIndex];
+      await _speak(
+          'Point your camera at the shelf for ${current.name}, then tap Scan Shelf.');
+    } else {
+      await _speak('Point your camera at the shelf and tap Scan Shelf.');
+    }
   }
 
   Future<void> _onScanShelf({bool fromGallery = false}) async {
@@ -249,7 +332,15 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       bytes = await _capturePhoto();
     }
     if (bytes == null) return;
-    await _speak('Saving shelf image.');
+    await _speak('Reading shelf text.');
+
+    final shelfText = await _runOcr(bytes);
+    if (shelfText == null) {
+      await _speak('Could not read the shelf text. Please try again.');
+      return;
+    }
+    _shelfOcrText = shelfText;
+    _shelfMatches = _matchItems(shelfText);
 
     final timestamp =
         DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
@@ -257,9 +348,23 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
 
     try {
       await _uploadToMagic(bytes, filename);
-      await _speak('Shelf image saved.');
+      if (_shelfMatches.isEmpty) {
+        await _speak('Shelf image saved. No list items found on this shelf.');
+      } else {
+        final names = _shelfMatches.map((i) => i.name).join(', ');
+        await _speak(
+            '${_shelfMatches.length} item${_shelfMatches.length == 1 ? "" : "s"} found on this shelf: $names.');
+      }
     } catch (_) {
       await _speak('Could not save the image. Please try again.');
+    }
+
+    if (_pendingShelfItems.isNotEmpty && _shelfPromptIndex < _pendingShelfItems.length - 1) {
+      _shelfPromptIndex++;
+      final nextItem = _pendingShelfItems[_shelfPromptIndex];
+      await _speak('Next, scan shelf for ${nextItem.name}.');
+    } else if (_pendingShelfItems.length > 1) {
+      await _speak('You have scanned shelves for all matched items in this aisle.');
     }
 
     setState(() => _phase = _Phase.shelfResults);
@@ -272,7 +377,13 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       _shelfMatches = [];
     });
     await _restartCamera();
-    await _speak('Point at the next shelf and tap Scan Shelf.');
+    if (_pendingShelfItems.isNotEmpty &&
+        _shelfPromptIndex < _pendingShelfItems.length) {
+      final current = _pendingShelfItems[_shelfPromptIndex];
+      await _speak('Point at the shelf for ${current.name} and tap Scan Shelf.');
+    } else {
+      await _speak('Point at the next shelf and tap Scan Shelf.');
+    }
   }
 
   Future<void> _onNextAisle() async {
@@ -283,6 +394,8 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       _shelfOcrText = '';
       _aisleMatches = [];
       _shelfMatches = [];
+      _pendingShelfItems = [];
+      _shelfPromptIndex = 0;
     });
     await _restartCamera();
     await _speak(

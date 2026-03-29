@@ -149,7 +149,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
             ),
           ),
           IconButton(
-            tooltip: 'Go to camera / OCR',
+            tooltip: 'Go to object-detection camera',
             icon: const Icon(Icons.camera_alt, size: 28),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const TakePictureScreen()),
