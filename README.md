@@ -10,7 +10,9 @@ A Flutter app designed for low-vision users, combining **grocery list management
 
 ```bash
 cd backend2
-python app.py
+$env:FLASK_ENV = "development"
+.venv\Scripts\python app.py
+
 ````
 
 ---
