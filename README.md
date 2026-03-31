@@ -1,13 +1,12 @@
-````markdown
-# my_low_vision_app
+# 🛒 my_low_vision_app
 
-A Flutter app for low-vision users that combines Supabase-backed grocery list management, guided aisle/shelf scanning, VLM + OCR support, and voice-guided interaction.
+A Flutter app designed for low-vision users, combining **grocery list management**, **aisle/shelf scanning**, and **voice-guided interaction** powered by VLM + OCR.
 
 ---
 
-## 🚀 How to Run (Simple)
+## 🚀 Quick Start
 
-### 1. Start Flask backend (profiles / lists)
+### 1️⃣ Start Flask Backend (Profiles & Lists)
 
 ```bash
 cd backend2
@@ -257,7 +256,4 @@ flutter run -d chrome --dart-define=OCR_BASE_URL=http://128.180.121.230:5010
 * [ ] `flutter pub get`
 * [ ] run with correct `OCR_BASE_URL`
 
-```
-
-This is already 🔥 for demos though.
 ```
