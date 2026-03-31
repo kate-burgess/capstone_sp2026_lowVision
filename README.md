@@ -203,7 +203,7 @@ flutter run -d chrome --dart-define=OCR_BASE_URL=http://128.180.121.230:5010
 * User profiles (allergies, dietary preferences)
 * Grocery list management
 * Voice input (TTS + STT)
-* Aisle scanner (OCR + VLM)
+* Aisle scanner (OCR)
 * Shelf scanner (YOLO or VLM)
 * Fully accessible UX with audio guidance
 
@@ -223,32 +223,3 @@ flutter run -d chrome --dart-define=OCR_BASE_URL=http://128.180.121.230:5010
 * [https://docs.flutter.dev/](https://docs.flutter.dev/)
 * [https://supabase.com/docs](https://supabase.com/docs)
 * [https://github.com/JaidedAI/EasyOCR](https://github.com/JaidedAI/EasyOCR)
-
----
-
-## ✅ Quick Checklist
-
-### Backend
-
-* [ ] `cd backend2`
-* [ ] `python app.py`
-
-### VLM Server
-
-* [ ] `cd "VLM Testing"`
-* [ ] `conda activate magic-vlm`
-* [ ] check CUDA (`nvidia-smi`)
-* [ ] install torch (correct CUDA)
-* [ ] (optional) flash-attn
-* [ ] `pip install -r requirements.txt`
-* [ ] verify CUDA works
-* [ ] set env variables
-* [ ] `python app_server_VLM.py`
-
-### Frontend
-
-* [ ] `flutter clean`
-* [ ] `flutter pub get`
-* [ ] run with correct `OCR_BASE_URL`
-
-```
