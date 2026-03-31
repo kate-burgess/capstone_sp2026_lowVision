@@ -77,9 +77,6 @@ If needed, replace `cu128` (e.g., `cu121`).
 
 ---
 
-Here’s the **updated Flash Attention section** with your addition cleanly integrated:
-
-````markdown
 ### ⚡ (Optional) Flash Attention
 
 Try installing Flash Attention first:
