@@ -577,9 +577,22 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     _shelfMatches = _matchItems(shelfText);
 
     final matchedNames = _shelfMatches.map((i) => i.name).join(', ');
+    // "Found" must not rely on ITEM FOUND alone—the model can say that for the
+    // wrong product (e.g. target diapers, image peppers). Require the answer to
+    // actually mention the target, and if shelf OCR matches a *different* list
+    // item but not the target, treat as not found unless OCR also matches target.
+    final vlmSaysFound = _vlmSaysItemFound(vlmAnswer);
+    final answerNamesTarget =
+        target != null && _vlmAnswerMatchesTarget(vlmAnswer, target);
+    final targetOnShelfByOcr =
+        target != null && _itemMatchesText(target, _tokenize(shelfText));
+    final shelfMatchesOtherListItem = target != null &&
+        _shelfMatches.any((i) => !identical(i, target));
+
     final targetFound = target != null &&
-        (_vlmSaysItemFound(vlmAnswer) ||
-            _vlmAnswerMatchesTarget(vlmAnswer, target));
+        vlmSaysFound &&
+        answerNamesTarget &&
+        (targetOnShelfByOcr || !shelfMatchesOtherListItem);
 
     setState(() {
       if (matchedNames.isEmpty) {
