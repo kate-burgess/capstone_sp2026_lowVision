@@ -632,14 +632,16 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     String question;
     if (target != null) {
       question =
-          'Do NOT read any text, labels, or signs. Use only visual appearance. '
-          'First, describe what grocery item you see concisely (1–2 sentences). '
-          'Then, say whether the described item matches "${target.name}". '
-          'If it matches, end with: ITEM FOUND.';
+        'Do NOT read any text, labels, or signs. Use only visual appearance. '
+        'Check if any described item visually matches "${target.name}". If so, say the brand and product name/type, and give its aproximate shelf location (e.g. top left, middle right). Give just this 1 sentence, nothing else. '
+        'If it matches, end with: ITEM FOUND. '
+        'If not match then say: MOVE ALONG, NO ITEMS FOUND'
+        'Be concise and only include items you can clearly identify.';
     } else {
       question =
-          'Do NOT read any text, labels, or signs. Use only visual appearance. '
-          'Describe the main grocery item(s) you see concisely for a low-vision user.';
+        'Do NOT read any text, labels, or signs. Use only visual appearance. '
+        'For each visible item, describe the brand and product name/type, and give its approximate shelf location (e.g., top left, middle right). '
+        'Be concise and only include items you can clearly identify for a low-vision user.';
     }
 
     final vlmAnswer = await _runVlmPredict(bytes, question: question);
@@ -1690,7 +1692,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  child: Text(_error!, style: const TextStyle(color: Color(0xFFFF6B6B))),
                 ),
               Row(
                 children: [

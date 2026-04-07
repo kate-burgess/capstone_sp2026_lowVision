@@ -119,7 +119,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
             flex: 1,
             child: Container(
               width: double.infinity,
-              color: const Color(0xFF1E1E2C),
+              color: const Color(0xFF1A1D24),
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +135,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 3,
-                            color: Color(0xFF00E5FF),
+                            color: Color(0xFF6D5EF5),
                           ),
                         ),
                     ],
@@ -146,7 +146,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF121212),
+                        color: const Color(0xFF0F1115),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: Colors.white12, width: 1),
                       ),
@@ -161,7 +161,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                           style: TextStyle(
                             color: _error != null
                                 ? theme.colorScheme.error
-                                : const Color(0xFF00E5FF),
+                                : const Color(0xFF6D5EF5),
                             fontSize: 20,
                           ),
                         ),
