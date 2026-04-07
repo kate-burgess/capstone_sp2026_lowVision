@@ -129,7 +129,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated!'),
-            backgroundColor: Colors.green,
+            backgroundColor: Color(0xFF3AE4C2),
           ),
         );
         Navigator.of(context).pop();

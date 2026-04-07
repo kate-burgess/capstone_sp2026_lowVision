@@ -1083,7 +1083,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
               if (_cameraError != null)
                 Center(
                     child: Text(_cameraError!,
-                        style: const TextStyle(color: Colors.red)))
+                        style: const TextStyle(color: Color(0xFFFF6B6B))))
               else if (!_cameraReady)
                 const Center(child: CircularProgressIndicator())
               else
@@ -1131,7 +1131,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00E5FF).withOpacity(0.95),
+                      color: const Color(0xFF6D5EF5).withOpacity(0.95),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -1163,7 +1163,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                                     style: const TextStyle(
                                         color: Colors.black, fontSize: 16)),
                                 backgroundColor:
-                                    const Color(0xFF00E5FF).withOpacity(0.9),
+                                    const Color(0xFF6D5EF5).withOpacity(0.9),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                               ))
@@ -1179,7 +1179,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircularProgressIndicator(
-                            color: Color(0xFF00E5FF), strokeWidth: 4),
+                            color: Color(0xFF6D5EF5), strokeWidth: 4),
                         SizedBox(height: 16),
                         Text('Reading text...',
                             style:
@@ -1193,17 +1193,17 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
         ),
         if (_ocrError != null)
           Container(
-            color: const Color(0xFFFF6E6E).withOpacity(0.2),
+            color: const Color(0xFFFF6B6B).withOpacity(0.2),
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
                 const Icon(Icons.error_outline,
-                    color: Color(0xFFFF6E6E), size: 24),
+                    color: Color(0xFFFF6B6B), size: 24),
                 const SizedBox(width: 10),
                 Expanded(
                     child: Text(_ocrError!,
                         style: const TextStyle(
-                            color: Color(0xFFFF6E6E), fontSize: 18))),
+                            color: Color(0xFFFF6B6B), fontSize: 18))),
               ],
             ),
           ),
@@ -1222,13 +1222,13 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                     decoration: BoxDecoration(
                       color: Colors.black87,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF00E5FF)),
+                      border: Border.all(color: const Color(0xFF6D5EF5)),
                     ),
                     child: Text(
                       _shelfStatusMessage,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                          color: Color(0xFF00E5FF), fontSize: 16),
+                          color: Color(0xFF6D5EF5), fontSize: 16),
                     ),
                   ),
                 if (isAisle && _aisleStatusMessage.isNotEmpty)
@@ -1240,13 +1240,13 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                     decoration: BoxDecoration(
                       color: Colors.black87,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFFD54F)),
+                      border: Border.all(color: const Color(0xFF3AE4C2)),
                     ),
                     child: Text(
                       _aisleStatusMessage,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                          color: Color(0xFFFFD54F), fontSize: 16),
+                          color: Color(0xFF3AE4C2), fontSize: 16),
                     ),
                   ),
                 Row(
@@ -1303,12 +1303,12 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       children: [
         Container(
           width: double.infinity,
-          color: const Color(0xFF00E5FF).withOpacity(0.1),
+          color: const Color(0xFF6D5EF5).withOpacity(0.1),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Row(
             children: [
               const Icon(Icons.article_outlined,
-                  color: Color(0xFF00E5FF), size: 28),
+                  color: Color(0xFF6D5EF5), size: 28),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1316,7 +1316,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      fontSize: 18, color: Color(0xFF00E5FF)),
+                      fontSize: 18, color: Color(0xFF6D5EF5)),
                 ),
               ),
             ],
@@ -1388,12 +1388,12 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       children: [
         Container(
           width: double.infinity,
-          color: const Color(0xFFFFD54F).withOpacity(0.1),
+          color: const Color(0xFF3AE4C2).withOpacity(0.1),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Row(
             children: [
               const Icon(Icons.document_scanner_outlined,
-                  color: Color(0xFFFFD54F), size: 28),
+                  color: Color(0xFF3AE4C2), size: 28),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1403,7 +1403,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      fontSize: 18, color: Color(0xFFFFD54F)),
+                      fontSize: 18, color: Color(0xFF3AE4C2)),
                 ),
               ),
             ],
@@ -1447,7 +1447,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         item.isChecked
                             ? Icons.check_circle
                             : Icons.radio_button_unchecked,
-                        color: item.isChecked ? Colors.green : null,
+                        color: item.isChecked ? const Color(0xFF3AE4C2) : null,
                       ),
                       controlAffinity: ListTileControlAffinity.leading,
                     ))
@@ -1487,13 +1487,13 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     final unchecked = _uncheckedSorted;
     final checked = _items.where((i) => i.isChecked).toList();
     return Drawer(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0F1115),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           DrawerHeader(
             decoration:
-                const BoxDecoration(color: Color(0xFF1E1E2C)),
+                const BoxDecoration(color: Color(0xFF1A1D24)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
@@ -1506,7 +1506,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                 const SizedBox(height: 8),
                 Text('${checked.length} of ${_items.length} checked',
                     style: const TextStyle(
-                        color: Color(0xFF00E5FF), fontSize: 18)),
+                        color: Color(0xFF6D5EF5), fontSize: 18)),
               ],
             ),
           ),
@@ -1516,7 +1516,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF00E5FF).withOpacity(0.7),
+                    color: const Color(0xFF6D5EF5).withOpacity(0.7),
                     letterSpacing: 1.2)),
           ),
           Expanded(
@@ -1527,7 +1527,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                       leading: item.aisle != null
                           ? CircleAvatar(
                               radius: 18,
-                              backgroundColor: const Color(0xFF00E5FF),
+                              backgroundColor: const Color(0xFF6D5EF5),
                               child: Text('${item.aisle}',
                                   style: const TextStyle(
                                       fontSize: 16, color: Colors.black,
@@ -1561,7 +1561,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                   ),
                   ...checked.map((item) => ListTile(
                         leading: const Icon(Icons.check_circle,
-                            color: Color(0xFF00E5FF), size: 24),
+                            color: Color(0xFF6D5EF5), size: 24),
                         title: Text(item.name,
                             style: const TextStyle(
                                 fontSize: 20,

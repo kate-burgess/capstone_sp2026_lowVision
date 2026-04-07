@@ -78,7 +78,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating list: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error creating list: $e'), backgroundColor: const Color(0xFFFF6B6B)),
       );
     }
   }
@@ -90,7 +90,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting list: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error deleting list: $e'), backgroundColor: const Color(0xFFFF6B6B)),
       );
     }
   }

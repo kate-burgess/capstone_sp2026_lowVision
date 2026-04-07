@@ -23,20 +23,20 @@ SupabaseClient get supabase => Supabase.instance.client;
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  static const _seed = Color(0xFF00E5FF);
+  static const _seed = Color(0xFF6D5EF5);
 
   static final _colorScheme = ColorScheme.fromSeed(
     seedColor: _seed,
     brightness: Brightness.dark,
-    surface: const Color(0xFF121212),
-    onSurface: Colors.white,
-    primary: const Color(0xFF00E5FF),
-    onPrimary: Colors.black,
-    secondary: const Color(0xFFFFD54F),
-    onSecondary: Colors.black,
-    error: const Color(0xFFFF6E6E),
-    onError: Colors.black,
-    surfaceContainerHighest: const Color(0xFF1E1E2C),
+    surface: const Color(0xFF0F1115),
+    onSurface: const Color(0xFFF5F7FA),
+    primary: const Color(0xFF6D5EF5),
+    onPrimary: const Color(0xFFF5F7FA),
+    secondary: const Color(0xFF3AE4C2),
+    onSecondary: const Color(0xFF232733),
+    error: const Color(0xFFFF6B6B),
+    onError: const Color(0xFF232733),
+    surfaceContainerHighest: const Color(0xFF1A1D24),
   );
 
   static const _textTheme = TextTheme(
@@ -57,9 +57,9 @@ class MyApp extends StatelessWidget {
         colorScheme: _colorScheme,
         useMaterial3: true,
         textTheme: _textTheme,
-        scaffoldBackgroundColor: const Color(0xFF121212),
+        scaffoldBackgroundColor: const Color(0xFF0F1115),
         appBarTheme: AppBarTheme(
-          backgroundColor: const Color(0xFF1E1E2C),
+          backgroundColor: const Color(0xFF1A1D24),
           foregroundColor: Colors.white,
           titleTextStyle: _textTheme.titleLarge?.copyWith(color: Colors.white),
           centerTitle: true,
@@ -67,8 +67,8 @@ class MyApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00E5FF),
-            foregroundColor: Colors.black,
+            backgroundColor: const Color(0xFF6D5EF5),
+            foregroundColor: const Color(0xFFF5F7FA),
             minimumSize: const Size(double.infinity, 56),
             textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             shape: RoundedRectangleBorder(
@@ -77,8 +77,8 @@ class MyApp extends StatelessWidget {
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF00E5FF),
-            side: const BorderSide(color: Color(0xFF00E5FF), width: 2),
+            foregroundColor: const Color(0xFF6D5EF5),
+            side: const BorderSide(color: Color(0xFF6D5EF5), width: 2),
             minimumSize: const Size(double.infinity, 56),
             textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             shape: RoundedRectangleBorder(
@@ -86,17 +86,17 @@ class MyApp extends StatelessWidget {
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Color(0xFF00E5FF),
-          foregroundColor: Colors.black,
+          backgroundColor: Color(0xFF6D5EF5),
+          foregroundColor: Color(0xFFF5F7FA),
           largeSizeConstraints: BoxConstraints.tightFor(width: 72, height: 72),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFF1E1E2C),
+          fillColor: const Color(0xFF1A1D24),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          labelStyle: const TextStyle(fontSize: 18, color: Colors.white70),
-          hintStyle: const TextStyle(fontSize: 18, color: Colors.white38),
+          labelStyle: const TextStyle(fontSize: 18, color: Color(0xFFC2C7D0)),
+          hintStyle: const TextStyle(fontSize: 18, color: Color(0xFFC2C7D0)),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: Colors.white24, width: 2),
@@ -107,20 +107,20 @@ class MyApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFF00E5FF), width: 2),
+            borderSide: const BorderSide(color: Color(0xFF6D5EF5), width: 2),
           ),
-          errorStyle: const TextStyle(fontSize: 16, color: Color(0xFFFF6E6E)),
+          errorStyle: const TextStyle(fontSize: 16, color: Color(0xFFFF6B6B)),
         ),
         cardTheme: CardThemeData(
-          color: const Color(0xFF1E1E2C),
+          color: const Color(0xFF1A1D24),
           elevation: 4,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
         chipTheme: ChipThemeData(
-          backgroundColor: const Color(0xFF1E1E2C),
-          selectedColor: const Color(0xFF00E5FF).withOpacity(0.3),
+          backgroundColor: const Color(0xFF1A1D24),
+          selectedColor: const Color(0xFF6D5EF5).withOpacity(0.3),
           labelStyle: const TextStyle(fontSize: 16, color: Colors.white),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape:
@@ -135,22 +135,22 @@ class MyApp extends StatelessWidget {
         checkboxTheme: CheckboxThemeData(
           fillColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const Color(0xFF00E5FF);
+              return const Color(0xFF6D5EF5);
             }
             return Colors.white24;
           }),
-          checkColor: WidgetStateProperty.all(Colors.black),
+          checkColor: WidgetStateProperty.all(const Color(0xFFF5F7FA)),
           side: const BorderSide(color: Colors.white54, width: 2),
         ),
         dialogTheme: DialogThemeData(
-          backgroundColor: const Color(0xFF1E1E2C),
+          backgroundColor: const Color(0xFF1A1D24),
           titleTextStyle: _textTheme.headlineMedium?.copyWith(color: Colors.white),
           contentTextStyle: _textTheme.bodyLarge?.copyWith(color: Colors.white),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         snackBarTheme: SnackBarThemeData(
-          backgroundColor: const Color(0xFF1E1E2C),
+          backgroundColor: const Color(0xFF1A1D24),
           contentTextStyle: const TextStyle(fontSize: 18, color: Colors.white),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

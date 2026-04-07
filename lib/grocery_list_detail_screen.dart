@@ -97,7 +97,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Error adding item: $e'),
-            backgroundColor: Colors.red),
+            backgroundColor: const Color(0xFFFF6B6B)),
       );
     }
   }
@@ -121,7 +121,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Error deleting item: $e'),
-            backgroundColor: Colors.red),
+            backgroundColor: const Color(0xFFFF6B6B)),
       );
     }
   }
@@ -141,7 +141,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14)),
               leading: CircleAvatar(
-                backgroundColor: const Color(0xFF00E5FF),
+                backgroundColor: const Color(0xFF6D5EF5),
                 child: const Icon(Icons.keyboard_alt_outlined,
                     color: Colors.black),
               ),
@@ -160,7 +160,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                   borderRadius: BorderRadius.circular(14)),
               leading: CircleAvatar(
                 backgroundColor:
-                    _speechAvailable ? const Color(0xFFFFD54F) : Colors.grey,
+                    _speechAvailable ? const Color(0xFF3AE4C2) : Colors.grey,
                 child: Icon(Icons.mic,
                     color: _speechAvailable ? Colors.black : Colors.white),
               ),
@@ -667,11 +667,11 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                             key: ValueKey('speaking'),
                             children: [
                               Icon(Icons.volume_up,
-                                  size: 64, color: Color(0xFFFFD54F)),
+                                  size: 64, color: Color(0xFF3AE4C2)),
                               SizedBox(height: 8),
                               Text('Speaking…',
                                   style: TextStyle(
-                                      color: Color(0xFFFFD54F),
+                                      color: Color(0xFF3AE4C2),
                                       fontSize: 20,
                                       fontWeight: FontWeight.w600)),
                             ],
@@ -688,12 +688,12 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
 
             if (_step == _VoiceStep.category) ...[
               if (_listeningCategory) ...[
-                const Icon(Icons.mic, size: 56, color: Color(0xFF00E5FF)),
+                const Icon(Icons.mic, size: 56, color: Color(0xFF6D5EF5)),
                 const SizedBox(height: 8),
                 const Text(
                   'Listening for category…',
                   style: TextStyle(
-                    color: Color(0xFF00E5FF),
+                    color: Color(0xFF6D5EF5),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -726,7 +726,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                     borderSide: BorderSide(color: Colors.white24),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF00E5FF)),
+                    borderSide: BorderSide(color: Color(0xFF6D5EF5)),
                   ),
                 ),
               ),
@@ -765,14 +765,15 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                 if (_itemName.isNotEmpty)
                   Chip(
                     avatar: const Icon(Icons.check_circle,
-                        size: 16, color: Colors.green),
+                        size: 16, color: Color(0xFF3AE4C2)),
                     label: Text('Item: $_itemName'),
                   ),
                 if (_categoryController.text.trim().isNotEmpty)
                   Chip(
                     avatar: const Icon(Icons.check_circle,
-                        size: 16, color: Colors.green),
-                    label: Text('Category: ${_categoryController.text.trim()}'),
+                        size: 16, color: Color(0xFF3AE4C2)),
+                    label: Text(
+                        'Category: ${_categoryController.text.trim()}'),
                   ),
               ],
             ),
