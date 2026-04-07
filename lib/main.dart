@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'take_picture_screen.dart';
@@ -39,7 +40,7 @@ class MyApp extends StatelessWidget {
     surfaceContainerHighest: const Color(0xFF1A1D24),
   );
 
-  static const _textTheme = TextTheme(
+  static const _baseTextTheme = TextTheme(
     displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
     headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
     titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
@@ -50,18 +51,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = GoogleFonts.soraTextTheme(_baseTextTheme).apply(
+      bodyColor: const Color(0xFFF5F7FA),
+      displayColor: const Color(0xFFF5F7FA),
+    );
     return MaterialApp(
       title: 'Low Vision Daily Companion',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: _colorScheme,
         useMaterial3: true,
-        textTheme: _textTheme,
+        textTheme: textTheme,
+        fontFamilyFallback: const ['Atkinson Hyperlegible', 'Roboto'],
         scaffoldBackgroundColor: const Color(0xFF0F1115),
         appBarTheme: AppBarTheme(
           backgroundColor: const Color(0xFF1A1D24),
           foregroundColor: Colors.white,
-          titleTextStyle: _textTheme.titleLarge?.copyWith(color: Colors.white),
+          titleTextStyle: textTheme.titleLarge?.copyWith(color: Colors.white),
           centerTitle: true,
           elevation: 2,
         ),
@@ -120,7 +126,7 @@ class MyApp extends StatelessWidget {
         ),
         chipTheme: ChipThemeData(
           backgroundColor: const Color(0xFF1A1D24),
-          selectedColor: const Color(0xFF6D5EF5).withOpacity(0.3),
+          selectedColor: const Color(0xFF6D5EF5).withValues(alpha: 0.3),
           labelStyle: const TextStyle(fontSize: 16, color: Colors.white),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape:
@@ -144,8 +150,9 @@ class MyApp extends StatelessWidget {
         ),
         dialogTheme: DialogThemeData(
           backgroundColor: const Color(0xFF1A1D24),
-          titleTextStyle: _textTheme.headlineMedium?.copyWith(color: Colors.white),
-          contentTextStyle: _textTheme.bodyLarge?.copyWith(color: Colors.white),
+          titleTextStyle:
+              textTheme.headlineMedium?.copyWith(color: Colors.white),
+          contentTextStyle: textTheme.bodyLarge?.copyWith(color: Colors.white),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),

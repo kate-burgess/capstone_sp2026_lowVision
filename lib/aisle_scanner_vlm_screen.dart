@@ -108,6 +108,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
   List<_Item> _shelfMatches = [];
   List<_Item> _pendingShelfItems = [];
   int _shelfPromptIndex = 0;
+  bool _lastShelfTargetFound = false;
+  String? _lastShelfTargetName;
 
   late List<_Item> _items;
   late Map<String, bool> _initialCheckedById;
@@ -414,18 +416,18 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
           : 'Detected list matches: $matchedNames. VLM: $cleaned';
     }
 
-    final desc = cleaned.isEmpty
-        ? 'Could not describe the shelf clearly from the photo.'
-        : 'What we see: $cleaned';
+    final desc = cleaned.isEmpty ? '' : 'App detected: $cleaned';
 
     final verdict = targetFound
         ? 'For "${target.name}": this looks like a match.'
-        : 'For "${target.name}": not a match on this shelf—keep looking or scan again.';
+        : 'For "${target.name}": not a match on this shelf. Move along this aisle and scan the shelf again.';
 
     if (!hasMatches) {
-      return '$desc\n\n$verdict';
+      return desc.isEmpty ? verdict : '$desc\n\n$verdict';
     }
-    return 'Shelf text matched your list: $matchedNames.\n\n$desc\n\n$verdict';
+    return desc.isEmpty
+        ? 'Shelf text matched your list: $matchedNames.\n\n$verdict'
+        : 'Shelf text matched your list: $matchedNames.\n\n$desc\n\n$verdict';
   }
 
   bool _vlmAnswerMatchesTarget(String answer, _Item target) {
@@ -554,7 +556,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     if (text == null) {
       setState(() => _showAisleUnclearEmployeeOption = true);
       await _speak(
-        'Could not read the sign. You can try again, or tap Get Help from store employee.',
+        'I could not read the aisle sign. Please retake the photo. If needed, tap Get Help from store employee.',
       );
       return;
     }
@@ -564,11 +566,12 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     if (!_looksLikeUsefulAisleText(text)) {
       setState(() {
         _phase = _Phase.aisleSign;
-        _aisleStatusMessage = 'Sign text unclear. Retake photo or get employee help.';
+        _aisleStatusMessage =
+            'Aisle sign not clear. Please retake the photo.';
         _showAisleUnclearEmployeeOption = true;
       });
       await _speak(
-        'This aisle sign is unclear. Try a closer photo, or tap Get Help from store employee.',
+        'This aisle sign photo is not clear. Please retake the photo. If needed, tap Get Help from store employee.',
       );
       return;
     }
@@ -586,7 +589,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     setState(() {
       _phase = _Phase.aisleResults;
       _aisleStatusMessage = _aisleMatches.isEmpty
-          ? 'No list items match this aisle.'
+          ? 'No items in this aisle.'
           : 'Matched items: ${_aisleMatches.map((e) => e.name).join(", ")}';
     });
 
@@ -600,6 +603,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       _shelfOcrText = '';
       _vlmAnswer = '';
       _shelfMatches = [];
+      _lastShelfTargetFound = false;
+      _lastShelfTargetName = null;
     });
 
     await _restartCamera();
@@ -683,6 +688,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
         targetFound: targetFound,
       );
       _phase = _Phase.shelfResults;
+      _lastShelfTargetFound = targetFound;
+      _lastShelfTargetName = target?.name;
     });
 
     await _speak(_shelfStatusMessage);
@@ -704,7 +711,9 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       if (targetFound) {
         await _speak('Go to the next aisle and scan.');
       } else {
-        await _speak('Scan aisle again.');
+        await _speak(
+          'Item not seen yet. Move along this aisle and scan the shelf again.',
+        );
       }
     }
   }
@@ -786,7 +795,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                   Expanded(
                     child: _checkOffAnswerBox(
                       label: 'Yes',
-                      borderColor: const Color(0xFF00E5FF),
+                      borderColor: const Color(0xFF3AE4C2),
                       onTap: () => Navigator.pop(ctx, true),
                     ),
                   ),
@@ -794,7 +803,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                   Expanded(
                     child: _checkOffAnswerBox(
                       label: 'No',
-                      borderColor: const Color(0xFFFFD54F),
+                      borderColor: const Color(0xFF6D5EF5),
                       onTap: () => Navigator.pop(ctx, false),
                     ),
                   ),
@@ -822,6 +831,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       _pendingShelfItems = [];
       _shelfPromptIndex = 0;
       _showAisleUnclearEmployeeOption = false;
+      _lastShelfTargetFound = false;
+      _lastShelfTargetName = null;
     });
 
     await _restartCamera();
@@ -938,12 +949,12 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No list items match "$value". Try another aisle name.',
+            'No items in this aisle.',
             style: const TextStyle(fontSize: 18),
           ),
         ),
       );
-      await _speak('No list items match $value. Try another aisle name.');
+      await _speak('No items in this aisle.');
       return;
     }
 
@@ -1009,10 +1020,10 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                          color: const Color(0xFF3AE4C2).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFF00E5FF),
+                            color: const Color(0xFF3AE4C2),
                             width: 2,
                           ),
                         ),
@@ -1439,9 +1450,9 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      Color(0xFF00E5FF),
-                      Color(0xFF26C6DA),
-                      Color(0xFFFFD54F),
+                      Color(0xFF6D5EF5),
+                      Color(0xFF3AE4C2),
+                      Color(0xFFFF6B6B),
                     ],
                   ),
                   border: Border.all(
@@ -1450,7 +1461,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
+                      color: const Color(0xFF6D5EF5).withValues(alpha: 0.4),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -1813,6 +1824,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
   }
 
   Widget _buildShelfResults() {
+    final shouldShowMoveAlongRescan =
+        _lastShelfTargetName != null && !_lastShelfTargetFound;
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1843,7 +1856,11 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: const Text('Scan Another Shelf'),
+                    child: Text(
+                      shouldShowMoveAlongRescan
+                          ? 'Move Along Aisle & Re-Scan'
+                          : 'Scan Another Shelf',
+                    ),
                   ),
                 ),
               ),
@@ -1865,6 +1882,14 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
               ),
             ],
           ),
+          if (shouldShowMoveAlongRescan) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Take a few steps along this aisle and scan the shelf again.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, color: Colors.white70),
+            ),
+          ],
         ],
       ),
     );

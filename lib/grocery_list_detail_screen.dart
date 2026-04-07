@@ -315,7 +315,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                             Icon(Icons.shopping_basket_outlined,
                                 size: 80,
                                 color: theme.colorScheme.primary
-                                    .withOpacity(0.5)),
+                                    .withValues(alpha: 0.5)),
                             const SizedBox(height: 20),
                             Text('No items yet',
                                 style: theme.textTheme.headlineMedium),
@@ -642,11 +642,11 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                         key: const ValueKey('listening'),
                         children: [
                           const Icon(Icons.mic,
-                              size: 64, color: Color(0xFF00E5FF)),
+                              size: 64, color: Color(0xFF6D5EF5)),
                           const SizedBox(height: 8),
                           const Text('Listening…',
                               style: TextStyle(
-                                  color: Color(0xFF00E5FF),
+                                  color: Color(0xFF6D5EF5),
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600)),
                           if (_recognized.isNotEmpty) ...[
