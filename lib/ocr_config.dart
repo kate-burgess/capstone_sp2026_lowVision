@@ -38,15 +38,46 @@ String ocrServiceBaseUrl() {
 /// Both local and MAGIC servers use the same `/extract-text` route.
 String get ocrMultipartPath => '/extract-text';
 
+Uri _proxyUri(String path) {
+  // Proxy endpoint: /api/ocr?path=/extract-text
+  final base = Uri.base;
+  final origin =
+      '${base.scheme}://${base.host}${base.hasPort ? ':${base.port}' : ''}';
+  return Uri.parse('$origin/api/ocr').replace(queryParameters: {'path': path});
+}
+
 /// Full URI for multipart image upload (field name `image`).
-Uri ocrMultipartUri() =>
-    Uri.parse('${ocrServiceBaseUrl()}$ocrMultipartPath');
+Uri ocrMultipartUri() {
+  final base = ocrServiceBaseUrl();
+  if (kIsWeb && base.endsWith('/api/ocr')) {
+    return _proxyUri('/extract-text');
+  }
+  return Uri.parse('$base$ocrMultipartPath');
+}
 
 /// URI for saving the image to the MAGIC server's Images_2026 folder.
-Uri uploadUri() => Uri.parse('${ocrServiceBaseUrl()}/upload');
+Uri uploadUri() {
+  final base = ocrServiceBaseUrl();
+  if (kIsWeb && base.endsWith('/api/ocr')) {
+    return _proxyUri('/upload');
+  }
+  return Uri.parse('$base/upload');
+}
 
 /// URI for VLM predictions (image + question -> answer).
-Uri vlmPredictUri() => Uri.parse('${ocrServiceBaseUrl()}/predict');
+Uri vlmPredictUri() {
+  final base = ocrServiceBaseUrl();
+  if (kIsWeb && base.endsWith('/api/ocr')) {
+    return _proxyUri('/predict');
+  }
+  return Uri.parse('$base/predict');
+}
 
 /// URI for YOLO object detections (image -> label list).
-Uri yoloDetectUri() => Uri.parse('${ocrServiceBaseUrl()}/detect-yolo');
+Uri yoloDetectUri() {
+  final base = ocrServiceBaseUrl();
+  if (kIsWeb && base.endsWith('/api/ocr')) {
+    return _proxyUri('/detect-yolo');
+  }
+  return Uri.parse('$base/detect-yolo');
+}
