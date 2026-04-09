@@ -332,11 +332,35 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
         return (data['full_text'] as String?)?.trim() ?? '';
       }
 
-      setState(() => _error = 'OCR server error ${res.statusCode}.');
+      var detail = body.trim().replaceAll(RegExp(r'\s+'), ' ');
+      if (detail.length > 180) {
+        detail = '${detail.substring(0, 180)}…';
+      }
+      final buf = StringBuffer('OCR server error ${res.statusCode}.');
+      if (detail.isNotEmpty) {
+        buf.write(' $detail');
+      }
+      if (kIsWeb && ocrWebMissingBuildTimeUrl()) {
+        buf.write(
+          ' Deployed sites need OCR_BASE_URL at build time, e.g. '
+          'flutter build web --dart-define=OCR_BASE_URL=https://your-api.example '
+          '(HTTPS if your app is HTTPS). The camera preview can still work when OCR fails.',
+        );
+      } else if (kIsWeb && res.statusCode >= 500) {
+        buf.write(
+          ' Check your OCR/VLM server logs and CORS. The camera preview can still work when OCR fails.',
+        );
+      }
+      setState(() => _error = buf.toString());
       return null;
     } catch (_) {
-      setState(() => _error =
-          'Cannot reach OCR service at ${ocrServiceBaseUrl()}.');
+      var msg =
+          'Cannot reach OCR service at ${ocrServiceBaseUrl()}. If this is a deployed web app, rebuild with --dart-define=OCR_BASE_URL=<your HTTPS API>.';
+      if (kIsWeb && ocrWebMissingBuildTimeUrl()) {
+        msg =
+            'OCR is not pointed at a reachable server. Build with --dart-define=OCR_BASE_URL=https://your-ocr-api.example (HTTPS on Vercel). The camera preview can still work.';
+      }
+      setState(() => _error = msg);
       return null;
     }
   }

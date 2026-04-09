@@ -11,27 +11,40 @@ const String _kMagicDefaultBaseUrl = 'http://128.180.121.230:5010';
 String _trimTrailingSlash(String s) =>
     s.endsWith('/') ? s.substring(0, s.length - 1) : s;
 
-String _webDefaultBaseUrl() {
-  // When running Flutter web, default to the same host as the app (port 5010).
-  // This avoids "works on device but not in browser" issues due to CORS / LAN IPs.
+bool _isLocalWebHost(String host) {
+  final h = host.toLowerCase();
+  return h.isEmpty || h == 'localhost' || h == '127.0.0.1' || h == '[::1]';
+}
+
+/// Web: only local dev uses same-host port 5010. Static hosts (e.g. Vercel)
+/// have no OCR on `:5010`—set [OCR_BASE_URL] at **build** time.
+String _webOcrFallbackBaseUrl() {
   final base = Uri.base;
   final scheme = base.scheme.isEmpty ? 'http' : base.scheme;
   final host = base.host.isEmpty ? 'localhost' : base.host;
-  return '$scheme://$host:5010';
+  if (_isLocalWebHost(host)) {
+    return '$scheme://$host:5010';
+  }
+  return _kMagicDefaultBaseUrl;
+}
+
+/// `true` if `flutter build web --dart-define=OCR_BASE_URL=...` was used.
+bool ocrBaseUrlSetAtBuildTime() =>
+    _trimTrailingSlash(_kOcrBaseUrlEnv.trim()).isNotEmpty;
+
+/// Web only: deployed static site (not localhost) without `--dart-define` OCR URL.
+bool ocrWebMissingBuildTimeUrl() {
+  if (!kIsWeb) return false;
+  if (ocrBaseUrlSetAtBuildTime()) return false;
+  final host = Uri.base.host;
+  return !_isLocalWebHost(host);
 }
 
 /// Resolved base URL (no trailing slash).
 String ocrServiceBaseUrl() {
   final trimmedEnv = _trimTrailingSlash(_kOcrBaseUrlEnv.trim());
   if (trimmedEnv.isNotEmpty) return trimmedEnv;
-  // For web builds deployed on HTTPS hosts (e.g., Vercel), calling an HTTP backend
-  // directly often fails due to mixed-content restrictions. Default to a same-origin
-  // proxy path when no OCR_BASE_URL is provided at build time.
-  if (kIsWeb) {
-    final base = Uri.base;
-    return _trimTrailingSlash('${base.scheme}://${base.host}${base.hasPort ? ':${base.port}' : ''}/api/ocr');
-  }
-  final fallback = _kMagicDefaultBaseUrl;
+  final fallback = kIsWeb ? _webDefaultBaseUrl() : _kMagicDefaultBaseUrl;
   return _trimTrailingSlash(fallback);
 }
 
