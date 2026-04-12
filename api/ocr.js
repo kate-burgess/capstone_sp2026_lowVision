@@ -1,43 +1,66 @@
-export default async function handler(req, res) {
-  // Proxies Flutter web requests to the OCR/VLM Flask server to avoid HTTPS->HTTP mixed content.
-  // Configure target with Vercel env var: OCR_PROXY_TARGET (e.g. http://128.180.121.230:5010)
+// Proxies Flutter web requests to the OCR/VLM Flask server (HTTPS page -> HTTP backend).
+// Set Vercel env: OCR_PROXY_TARGET (e.g. http://128.180.121.230:5010)
+//
+// Uses the Web Request/Response handler so the body is read via standard APIs (reliable on
+// Vercel). The Next.js-only `export const config = { api: { bodyParser: false } }` does not
+// apply to this Flutter static deployment; if you ever need raw IncomingMessage without
+// helpers, set env NODEJS_HELPERS=0 per Vercel docs.
 
-  const targetBase = (process.env.OCR_PROXY_TARGET || "").replace(/\/$/, "");
-  if (!targetBase) {
-    res.status(500).json({
-      error:
-        "OCR_PROXY_TARGET is not set. Set it in Vercel Environment Variables (e.g. http://128.180.121.230:5010).",
-    });
-    return;
-  }
+export default {
+  async fetch(request) {
+    let targetUrlString = "";
+    try {
+      const targetBase = (process.env.OCR_PROXY_TARGET || "").replace(/\/$/, "");
+      if (!targetBase) {
+        return Response.json(
+          {
+            error:
+              "OCR_PROXY_TARGET is not set. Set it in Vercel Environment Variables (e.g. http://128.180.121.230:5010).",
+          },
+          { status: 500 },
+        );
+      }
 
-  // Map: /api/ocr?path=/extract-text  ->  ${targetBase}/extract-text
-  const path = typeof req.query.path === "string" ? req.query.path : "/extract-text";
-  const targetUrl = new URL(targetBase + path);
+      const incoming = new URL(request.url);
+      let path = incoming.searchParams.get("path") || "/extract-text";
+      if (!path.startsWith("/")) path = `/${path}`;
 
-  // Forward method + body (supports multipart/form-data and JSON).
-  const init = {
-    method: req.method,
-    headers: {
-      // Let node fetch set content-length boundaries automatically for multipart.
-      // Forward content-type if present (important for multipart).
-      ...(req.headers["content-type"] ? { "content-type": req.headers["content-type"] } : {}),
-    },
-  };
+      const targetUrl = new URL(path, `${targetBase}/`);
+      targetUrlString = targetUrl.toString();
 
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    // Vercel provides req as a stream; read raw bytes.
-    const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
-    init.body = Buffer.concat(chunks);
-  }
+      const method = request.method;
+      const forwardHeaders = {};
+      const ct = request.headers.get("content-type");
+      if (ct) forwardHeaders["content-type"] = ct;
 
-  const upstream = await fetch(targetUrl.toString(), init);
-  const buf = Buffer.from(await upstream.arrayBuffer());
+      let body;
+      if (method !== "GET" && method !== "HEAD") {
+        const buf = await request.arrayBuffer();
+        body = buf.byteLength > 0 ? buf : undefined;
+      }
 
-  // Copy content-type back.
-  const ct = upstream.headers.get("content-type");
-  if (ct) res.setHeader("content-type", ct);
-  res.status(upstream.status).send(buf);
-}
+      const upstream = await fetch(targetUrlString, {
+        method,
+        headers: forwardHeaders,
+        body,
+        // Flask on a single host: no redirect follow required; keeps errors visible.
+      });
 
+      const outBuf = await upstream.arrayBuffer();
+      const outHeaders = new Headers();
+      const uct = upstream.headers.get("content-type");
+      if (uct) outHeaders.set("content-type", uct);
+
+      return new Response(outBuf, { status: upstream.status, headers: outHeaders });
+    } catch (err) {
+      return Response.json(
+        {
+          error: "Proxy request failed",
+          detail: String(err),
+          target: targetUrlString || undefined,
+        },
+        { status: 502 },
+      );
+    }
+  },
+};

@@ -145,19 +145,20 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.visibility,
-                      size: 64, color: theme.colorScheme.primary),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Low Vision\nDaily Companion',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.displayLarge,
+                  Semantics(
+                    label: 'Low Vision Daily Companion',
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      height: 160,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 20),
                   Text(
                     _isSignup
                         ? 'Create an account to get started'
                         : 'Sign in to continue',
+                    textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: Colors.white60),
                   ),
