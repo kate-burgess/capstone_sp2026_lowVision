@@ -49,8 +49,7 @@ Future<void> _pinEnglishVoiceWeb(FlutterTts tts) async {
   await _tryPinEnglishVoiceOnce(tts);
 }
 
-/// Returns true if a voice was applied from a non-empty list.
-Future<bool> _tryPinEnglishVoiceOnce(FlutterTts tts) async {
+Future<void> _tryPinEnglishVoiceOnce(FlutterTts tts) async {
   List<dynamic>? list;
   for (var i = 0; i < 12; i++) {
     try {
@@ -102,14 +101,13 @@ Future<bool> _tryPinEnglishVoiceOnce(FlutterTts tts) async {
       try {
         await tts.setLanguage(pick['locale']!);
       } catch (_) {}
-      return true;
+      return;
     } catch (_) {}
   }
 
   try {
     await tts.setLanguage('en-US');
   } catch (_) {}
-  return false;
 }
 
 /// Locale for [SpeechToText.listen] in English.
