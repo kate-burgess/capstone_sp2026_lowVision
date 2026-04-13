@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'app_language.dart';
 import 'grocery_list_screen.dart';
 import 'main.dart';
-import 'translated_text.dart';
 
 /// Used both for initial profile setup (after signup) and for editing an
 /// existing profile. Pass isEditing: true when opening from settings.
@@ -48,17 +46,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final Set<String> _selectedDiet = {};
   final Set<String> _selectedAllergies = {};
 
-  /// Google Translate language code; synced with [AppLanguageController].
-  String _languageCode = 'en';
-
-  /// Spoken prompts (TTS); synced with [AppLanguageController].
-  AppTtsVoiceGender _voiceGender = AppTtsVoiceGender.woman;
-
   @override
   void initState() {
     super.initState();
-    _languageCode = AppLanguageController.instance.googleCode;
-    _voiceGender = AppLanguageController.instance.voiceGender;
     _loadExistingProfile();
   }
 
@@ -94,19 +84,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         final allergyRaw = profile['allergies'] as String? ?? '';
         for (final part in allergyRaw.split(',')) {
           final trimmed = part.trim();
-          if (_allergyOptions.contains(trimmed)) _selectedAllergies.add(trimmed);
+          if (_allergyOptions.contains(trimmed)) {
+            _selectedAllergies.add(trimmed);
+          }
         }
       }
     } catch (_) {
       // Silently ignore — the user can still fill in the form.
     } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _languageCode = AppLanguageController.instance.googleCode;
-          _voiceGender = AppLanguageController.instance.voiceGender;
-        });
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -140,16 +126,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         'allergies': allergyText,
       });
 
-      await AppLanguageController.instance.setGoogleCode(_languageCode);
-      await AppLanguageController.instance.setVoiceGender(_voiceGender);
-
       if (!mounted) return;
 
       if (widget.isEditing) {
-        // Return to the previous screen with a success message.
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Tx(
+            content: Text(
               'Profile updated!',
               style: const TextStyle(
                 fontSize: 18,
@@ -177,7 +159,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     if (_loading) {
       return Scaffold(
         appBar: AppBar(
-            title: Tx(widget.isEditing ? 'Edit profile' : 'Set up your profile')),
+          title: Text(
+            widget.isEditing ? 'Edit profile' : 'Set up your profile',
+          ),
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -185,7 +170,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Tx(widget.isEditing ? 'Edit Profile' : 'Set Up Your Profile'),
+        title: Text(widget.isEditing ? 'Edit Profile' : 'Set Up Your Profile'),
         leading: widget.isEditing
             ? IconButton(
                 tooltip: 'Go back',
@@ -202,91 +187,32 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Tx(
+                Text(
                   widget.isEditing
                       ? 'Update your profile'
                       : 'Tell us about yourself',
                   style: theme.textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 6),
-                Tx(
+                Text(
                   'This helps personalise your grocery lists.',
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: Colors.white60),
                 ),
                 const SizedBox(height: 28),
-
                 TextField(
                   controller: _nameController,
-                  decoration: InputDecoration(
-                    label: const Tx('Full name'),
-                    prefixIcon: const Icon(Icons.person_outline),
+                  decoration: const InputDecoration(
+                    labelText: 'Full name',
+                    prefixIcon: Icon(Icons.person_outline),
                   ),
                   style: theme.textTheme.bodyLarge,
                   textCapitalization: TextCapitalization.words,
                 ),
-                const SizedBox(height: 28),
-                Tx('App language (BETA)', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 6),
-                Tx(
-                  'Voice guidance and on-screen wording follow this language. Change it any time here.',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: Colors.white60),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _languageCode,
-                  decoration: InputDecoration(
-                    label: const Tx('Language'),
-                    prefixIcon: const Icon(Icons.language_outlined),
-                  ),
-                  style: theme.textTheme.bodyLarge,
-                  items: [
-                    for (final o in AppLanguageController.options)
-                      DropdownMenuItem<String>(
-                        value: o.googleCode,
-                        child: Tx(o.label),
-                      ),
-                  ],
-                  onChanged: (v) =>
-                      setState(() => _languageCode = v ?? 'en'),
-                ),
-                const SizedBox(height: 28),
-                Tx('Voice for guidance', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 6),
-                Tx(
-                  'Spoken prompts in the store use this style. Pick the voice that sounds clearest to you.',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: Colors.white60),
-                ),
-                const SizedBox(height: 12),
-                SegmentedButton<AppTtsVoiceGender>(
-                  segments: [
-                    ButtonSegment(
-                      value: AppTtsVoiceGender.woman,
-                      label: Tx('Woman'),
-                    ),
-                    ButtonSegment(
-                      value: AppTtsVoiceGender.man,
-                      label: Tx('Man'),
-                    ),
-                  ],
-                  selected: {_voiceGender},
-                  onSelectionChanged: (s) {
-                    if (s.isEmpty) return;
-                    setState(() => _voiceGender = s.first);
-                  },
-                  multiSelectionEnabled: false,
-                  emptySelectionAllowed: false,
-                  style: SegmentedButton.styleFrom(
-                    textStyle: theme.textTheme.bodyLarge,
-                  ),
-                ),
                 const SizedBox(height: 32),
-
-                Tx('Dietary preferences', style: theme.textTheme.titleLarge),
+                Text('Dietary preferences', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 6),
-                Tx(
+                Text(
                   'Select all that apply',
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: Colors.white60),
@@ -298,12 +224,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   children: _dietOptions.map((opt) {
                     final selected = _selectedDiet.contains(opt);
                     return FilterChip(
-                      label: Tx(opt),
+                      label: Text(opt),
                       selected: selected,
                       onSelected: (v) => setState(() {
                         if (v) {
-                          if (opt == 'No restrictions') _selectedDiet.clear();
-                          else _selectedDiet.remove('No restrictions');
+                          if (opt == 'No restrictions') {
+                            _selectedDiet.clear();
+                          } else {
+                            _selectedDiet.remove('No restrictions');
+                          }
                           _selectedDiet.add(opt);
                         } else {
                           _selectedDiet.remove(opt);
@@ -313,10 +242,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   }).toList(),
                 ),
                 const SizedBox(height: 32),
-
-                Tx('Allergies', style: theme.textTheme.titleLarge),
+                Text('Allergies', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 6),
-                Tx(
+                Text(
                   'Select all that apply',
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: Colors.white60),
@@ -328,33 +256,36 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   children: _allergyOptions.map((opt) {
                     final selected = _selectedAllergies.contains(opt);
                     return FilterChip(
-                      label: Tx(opt),
+                      label: Text(opt),
                       selected: selected,
                       onSelected: (v) => setState(() {
                         if (v) {
-                          if (opt == 'None') _selectedAllergies.clear();
-                          else _selectedAllergies.remove('None');
+                          if (opt == 'None') {
+                            _selectedAllergies.clear();
+                          } else {
+                            _selectedAllergies.remove('None');
+                          }
                           _selectedAllergies.add(opt);
                         } else {
                           _selectedAllergies.remove(opt);
                         }
                       }),
                       selectedColor:
-                          theme.colorScheme.error.withOpacity(0.3),
+                          theme.colorScheme.error.withValues(alpha: 0.3),
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: 32),
-
                 if (_error != null) ...[
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.error.withOpacity(0.15),
+                      color:
+                          theme.colorScheme.error.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Tx(
+                    child: Text(
                       _error!,
                       style: theme.textTheme.bodyLarge
                           ?.copyWith(color: theme.colorScheme.error),
@@ -362,7 +293,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
-
                 ElevatedButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
@@ -370,15 +300,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           width: 24,
                           height: 24,
                           child: CircularProgressIndicator(
-                              strokeWidth: 3, color: Colors.black))
-                      : Tx(
+                            strokeWidth: 3,
+                            color: Colors.black,
+                          ),
+                        )
+                      : Text(
                           widget.isEditing
                               ? 'Save Changes'
                               : 'Save and Continue',
                         ),
                 ),
                 const SizedBox(height: 16),
-
                 if (!widget.isEditing)
                   Center(
                     child: TextButton(
@@ -386,12 +318,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           ? null
                           : () => Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
-                                    builder: (_) => const GroceryListScreen()),
+                                  builder: (_) => const GroceryListScreen(),
+                                ),
                               ),
                       style: TextButton.styleFrom(
                         textStyle: theme.textTheme.bodyMedium,
                       ),
-                      child: Tx('Skip for now'),
+                      child: const Text('Skip for now'),
                     ),
                   ),
               ],

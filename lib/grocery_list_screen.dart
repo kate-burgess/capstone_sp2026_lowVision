@@ -2,9 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'app_language.dart';
+import 'app_tts.dart';
 import 'app_speech.dart';
-import 'translated_text.dart';
 import 'main.dart';
 import 'take_picture_screen.dart';
 import 'grocery_list_detail_screen.dart';
@@ -95,7 +94,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Tx('Error creating list: $e'),
+          content: Text('Error creating list: $e'),
           backgroundColor: const Color(0xFFFF6B6B),
         ),
       );
@@ -110,7 +109,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Tx('Error deleting list: $e'),
+          content: Text('Error deleting list: $e'),
           backgroundColor: const Color(0xFFFF6B6B),
         ),
       );
@@ -121,15 +120,15 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        content: const Tx('Are you sure you want to delete this list?'),
+        content: const Text('Are you sure you want to delete this list?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Tx('Cancel'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Tx('Confirm'),
+            child: const Text('Confirm'),
           ),
         ],
       ),
@@ -144,7 +143,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => AlertDialog(
-          title: const Tx('New grocery list'),
+          title: const Text('New grocery list'),
           content: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -153,13 +152,13 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                   controller: titleController,
                   autofocus: true,
                   decoration: const InputDecoration(
-                    hint: Tx('List title'),
+                    hint: Text('List title'),
                   ),
                   onChanged: (_) => setModal(() {}),
                 ),
               ),
               const SizedBox(width: 8),
-              Ttip(
+              Tooltip(
                 message: 'Speak list name',
                 child: IconButton(
                   icon: Icon(
@@ -186,8 +185,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                             pauseFor: const Duration(seconds: 3),
                             cancelOnError: true,
                             partialResults: true,
-                            localeId: AppLanguageController.instance
-                                .speechToTextLocaleId(),
+                            localeId: englishSpeechToTextLocaleId(),
                           );
                           final text = await completer.future.timeout(
                             const Duration(seconds: 14),
@@ -220,7 +218,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Tx('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -229,7 +227,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                 Navigator.pop(ctx);
                 _createList(title);
               },
-              child: const Tx('Create'),
+              child: const Text('Create'),
             ),
           ],
         ),
@@ -250,8 +248,8 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Tx('My Grocery Lists'),
-        leading: Ttip(
+        title: const Text('My Grocery Lists'),
+        leading: Tooltip(
           message: 'Edit profile',
           child: IconButton(
             icon: const Icon(Icons.person_outline, size: 32),
@@ -262,7 +260,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
           ),
         ),
         actions: [
-          Ttip(
+          Tooltip(
             message: 'Sign out',
             child: IconButton(
               icon: const Icon(Icons.logout, size: 32),
@@ -280,7 +278,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Tx(
+                        Text(
                           _error!,
                           style: theme.textTheme.bodyLarge
                               ?.copyWith(color: theme.colorScheme.error),
@@ -290,7 +288,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                         ElevatedButton.icon(
                           onPressed: _fetchLists,
                           icon: const Icon(Icons.refresh),
-                          label: const Tx('Retry'),
+                          label: const Text('Retry'),
                         ),
                       ],
                     ),
@@ -308,13 +306,13 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                                 color: theme.colorScheme.primary
                                     .withOpacity(0.5)),
                             const SizedBox(height: 20),
-                            Tx(
+                            Text(
                               'No lists yet',
                               style: theme.textTheme.headlineMedium,
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
-                            Tx(
+                            Text(
                               'Tap the + button to create\nyour first grocery list.',
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyLarge
@@ -339,7 +337,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
-                              leading: Ttip(
+                              leading: Tooltip(
                                 message: 'Start grocery shopping',
                                 child: IconButton(
                                   icon: Icon(Icons.shopping_cart,
@@ -370,7 +368,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                                     ScaffoldMessenger.of(context)
                                         .showSnackBar(
                                       SnackBar(
-                                        content: Tx('Error loading items: $e'),
+                                        content: Text('Error loading items: $e'),
                                       ),
                                     );
                                   }
@@ -386,7 +384,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                                           list['created_at'] as String),
                                     )
                                   : null,
-                              trailing: Ttip(
+                              trailing: Tooltip(
                                 message: 'Delete list',
                                 child: IconButton(
                                   icon: Icon(Icons.delete_outline,
@@ -408,7 +406,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                         },
                       ),
                     ),
-      floatingActionButton: Ttip(
+      floatingActionButton: Tooltip(
         message: 'New list',
         child: FloatingActionButton.large(
           onPressed: _showCreateDialog,

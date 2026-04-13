@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'translated_text.dart';
 
 
 import 'display_picture_screen.dart';
@@ -133,7 +132,7 @@ Future<void> _takePicture() async {
   } catch (e) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Tx('Error: $e')),
+        SnackBar(content: Text('Error: $e')),
       );
     }
   } finally {
@@ -165,7 +164,7 @@ Future<void> _takePicture() async {
   Widget build(BuildContext context) {
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Tx('Camera')),
+        appBar: AppBar(title: const Text('Camera')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -174,12 +173,12 @@ Future<void> _takePicture() async {
               children: [
                 const Icon(Icons.camera_alt_outlined, size: 64, color: Colors.grey),
                 const SizedBox(height: 16),
-                Tx(_error!, textAlign: TextAlign.center),
+                Text(_error!, textAlign: TextAlign.center),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () => initCameras().then((_) => setState(() {})),
                   icon: const Icon(Icons.refresh),
-                  label: const Tx('Retry'),
+                  label: const Text('Retry'),
                 ),
               ],
             ),
@@ -189,7 +188,7 @@ Future<void> _takePicture() async {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Tx('Camera')),
+      appBar: AppBar(title: const Text('Camera')),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -204,7 +203,7 @@ Future<void> _takePicture() async {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Tx(
+                          Text(
                             'Camera error: ${snapshot.error}',
                             style: Theme.of(context).textTheme.bodyLarge,
                             textAlign: TextAlign.center,
@@ -215,7 +214,7 @@ Future<void> _takePicture() async {
                               _initializeControllerFuture =
                                   _controller.initialize();
                             }),
-                            child: const Tx('Retry'),
+                            child: const Text('Retry'),
                           ),
                         ],
                       ),
@@ -239,7 +238,7 @@ Future<void> _takePicture() async {
                   color: Colors.black87,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Tx(
+                child: const Text(
                   'Point at text, then tap to capture',
                   style: TextStyle(color: Colors.white, fontSize: 20),
                 ),
@@ -257,7 +256,7 @@ Future<void> _takePicture() async {
                     color: Colors.black87,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Tx(
+                  child: Text(
                     detectedLabel,
                     style: const TextStyle(
                       color: Colors.white,

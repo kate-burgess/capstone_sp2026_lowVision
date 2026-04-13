@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 
 import 'app_colors.dart';
 import 'ocr_config.dart';
-import 'translated_text.dart';
 
 class DisplayPictureScreen extends StatelessWidget {
   const DisplayPictureScreen({super.key, required this.imageBytes});
@@ -94,9 +93,9 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Tx('Photo & Extracted Text'),
+        title: const Text('Photo & Extracted Text'),
         actions: [
-          Ttip(
+          Tooltip(
             message: 'Re-run OCR',
             child: IconButton(
               onPressed: _isProcessing ? null : _performOCR,
@@ -129,7 +128,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                 children: [
                   Row(
                     children: [
-                      Tx('Extracted Text',
+                      Text('Extracted Text',
                           style: theme.textTheme.headlineMedium),
                       const SizedBox(width: 10),
                       if (_isProcessing)
@@ -155,7 +154,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                       ),
                       child: SingleChildScrollView(
                         child: _error != null
-                            ? Tx(
+                            ? Text(
                                 _error!,
                                 style: TextStyle(
                                   color: theme.colorScheme.error,
@@ -163,7 +162,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                                 ),
                               )
                             : _extractedText.isEmpty
-                                ? Tx(
+                                ? Text(
                                     _isProcessing
                                         ? 'Processing image...'
                                         : 'No text found',
@@ -186,7 +185,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                   ElevatedButton.icon(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.add_photo_alternate),
-                    label: Tx(
+                    label: Text(
                       kIsWeb ? 'Pick Another Image' : 'Take Another Picture',
                     ),
                   ),

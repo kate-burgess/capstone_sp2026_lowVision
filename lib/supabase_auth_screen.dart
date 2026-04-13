@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'grocery_list_screen.dart';
 import 'main.dart';
 import 'profile_setup_screen.dart';
-import 'translated_text.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -50,8 +49,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           email: email,
           password: password,
         );
-        // If signup succeeded but returned no session, try to sign in
-        // immediately (works when email confirmation is disabled).
         if (response.session == null && response.user != null) {
           try {
             final loginResponse = await supabase.auth.signInWithPassword(
@@ -61,9 +58,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
             if (loginResponse.session != null) {
               response = loginResponse;
             }
-          } catch (_) {
-            // Email confirmation is required — fall through to message below.
-          }
+          } catch (_) {}
         }
       } else {
         response = await supabase.auth.signInWithPassword(
@@ -75,7 +70,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       final session = response.session ?? supabase.auth.currentSession;
       final accessToken = session?.accessToken;
 
-      // No session means email confirmation is still required.
       if (accessToken == null) {
         if (_isSignup) {
           if (!mounted) return;
@@ -89,7 +83,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         }
       }
 
-      // Check whether this user already has a profile row.
       bool hasProfile = false;
       try {
         final rows = await supabase
@@ -98,14 +91,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
             .eq('id', supabase.auth.currentUser!.id)
             .limit(1);
         hasProfile = (rows as List).isNotEmpty;
-      } catch (_) {
-        // If the check fails, fall through to profile setup anyway.
-      }
+      } catch (_) {}
 
       if (!mounted) return;
 
-      // New users (no profile yet) → collect preferences first.
-      // Returning users with a profile → go straight to grocery lists.
       if (!hasProfile) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
@@ -131,7 +120,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Tx(_isSignup ? 'Welcome' : 'Welcome Back'),
+        title: Text(_isSignup ? 'Welcome' : 'Welcome Back'),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -152,7 +141,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Tx(
+                  Text(
                     _isSignup
                         ? 'Create an account to get started'
                         : 'Sign in to continue',
@@ -166,10 +155,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.error.withOpacity(0.15),
+                        color:
+                            theme.colorScheme.error.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Tx(
+                      child: Text(
                         _errorMessage!,
                         style: theme.textTheme.bodyLarge
                             ?.copyWith(color: theme.colorScheme.error),
@@ -181,7 +171,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                     TextFormField(
                       controller: _fullNameController,
                       decoration: const InputDecoration(
-                        label: Tx('Full name'),
+                        labelText: 'Full name',
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                       style: theme.textTheme.bodyLarge,
@@ -191,7 +181,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
-                      label: Tx('Email'),
+                      labelText: 'Email',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
                     style: theme.textTheme.bodyLarge,
@@ -207,7 +197,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                   TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
-                      label: Tx('Password'),
+                      labelText: 'Password',
                       prefixIcon: Icon(Icons.lock_outline),
                     ),
                     style: theme.textTheme.bodyLarge,
@@ -227,9 +217,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
-                                strokeWidth: 3, color: Colors.black),
+                              strokeWidth: 3,
+                              color: Colors.black,
+                            ),
                           )
-                        : Tx(_isSignup ? 'Create Account' : 'Sign In'),
+                        : Text(_isSignup ? 'Create Account' : 'Sign In'),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
@@ -245,7 +237,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                       foregroundColor: Colors.white,
                       textStyle: theme.textTheme.bodyMedium,
                     ),
-                    child: Tx(
+                    child: Text(
                       _isSignup
                           ? 'Already have an account? Log in'
                           : 'Need an account? Sign up',
@@ -260,4 +252,3 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     );
   }
 }
-

@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'translated_text.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-import 'app_language.dart';
+import 'app_tts.dart';
 import 'app_speech.dart';
 import 'app_voice_policy.dart';
 import 'main.dart';
@@ -40,7 +39,6 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
   @override
   void initState() {
     super.initState();
-    AppLanguageController.instance.addListener(_syncListTts);
     unawaited(_syncListTts());
     _fetchItems();
     _initSpeech();
@@ -79,12 +77,11 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
   }
 
   Future<void> _syncListTts() async {
-    await AppLanguageController.instance.applyToTts(_tts);
+    await applyEnglishTts(_tts);
   }
 
   @override
   void dispose() {
-    AppLanguageController.instance.removeListener(_syncListTts);
     _listVoiceHost?.unmount();
     _tts.stop();
     AppSpeech.I.stt.stop();
@@ -130,7 +127,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Tx('Error adding item: $e'),
+          content: Text('Error adding item: $e'),
           backgroundColor: const Color(0xFFFF6B6B),
         ),
       );
@@ -153,12 +150,12 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Tx('Delete item'),
+        title: const Text('Delete item'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Tx(
+            const Text(
               'Are you sure you want to delete this item?',
               style: TextStyle(fontSize: 20),
             ),
@@ -177,11 +174,11 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Tx('Cancel'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Tx('Delete'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -197,7 +194,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Tx('Error deleting item: $e'),
+          content: Text('Error deleting item: $e'),
           backgroundColor: const Color(0xFFFF6B6B),
         ),
       );
@@ -210,7 +207,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Tx('How do you want to add an item?'),
+        title: const Text('How do you want to add an item?'),
         contentPadding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -223,9 +220,9 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                 child: const Icon(Icons.keyboard_alt_outlined,
                     color: Colors.black),
               ),
-              title: const Tx('Type it manually',
+              title: const Text('Type it manually',
                   style: TextStyle(fontSize: 20)),
-              subtitle: const Tx('Fill in item name and section',
+              subtitle: const Text('Fill in item name and section',
                   style: TextStyle(fontSize: 16)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -242,9 +239,9 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                 child: Icon(Icons.mic,
                     color: _speechAvailable ? Colors.black : Colors.white),
               ),
-              title: const Tx('Speak it',
+              title: const Text('Speak it',
                   style: TextStyle(fontSize: 20)),
-              subtitle: Tx(
+              subtitle: Text(
                 _speechAvailable
                     ? 'Speak the item name, then type or speak any section you want'
                     : 'Not available in this browser',
@@ -264,7 +261,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Tx('Cancel'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -283,7 +280,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Tx('Add item'),
+          title: const Text('Add item'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -293,16 +290,16 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                 autofocus: true,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  label: Tx('Item name'),
-                  hint: Tx('e.g. Apples'),
+                  label: Text('Item name'),
+                  hint: Text('e.g. Apples'),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: sectionController,
                 decoration: const InputDecoration(
-                  label: Tx('Section'),
-                  hint: Tx('Type any section, e.g. Desserts, Dairy, Snacks'),
+                  label: Text('Section'),
+                  hint: Text('Type any section, e.g. Desserts, Dairy, Snacks'),
                 ),
                 textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.done,
@@ -320,7 +317,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Tx('Cancel'),
+              child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () => _trySubmitManualAdd(
@@ -331,7 +328,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                 sectionController: sectionController,
                 nameFocus: nameFocus,
               ),
-              child: const Tx('Add'),
+              child: const Text('Add'),
             ),
           ],
         ),
@@ -358,7 +355,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       if (!parentContext.mounted) return;
       ScaffoldMessenger.of(parentContext).showSnackBar(
         const SnackBar(
-          content: Tx('Enter a section (any name you like).'),
+          content: Text('Enter a section (any name you like).'),
         ),
       );
       return;
@@ -408,7 +405,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       appBar: AppBar(
         title: Text(widget.listTitle),
         actions: [
-          Ttip(
+          Tooltip(
             message: 'Refresh',
             child: IconButton(
               icon: const Icon(Icons.refresh, size: 32),
@@ -423,7 +420,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Tx(
+                    child: Text(
                       _error!,
                       style: theme.textTheme.bodyLarge
                           ?.copyWith(color: theme.colorScheme.error),
@@ -443,12 +440,12 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                                 color: theme.colorScheme.primary
                                     .withValues(alpha: 0.5)),
                             const SizedBox(height: 20),
-                            Tx(
+                            Text(
                               'No items yet',
                               style: theme.textTheme.headlineMedium,
                             ),
                             const SizedBox(height: 8),
-                            Tx(
+                            Text(
                               'Tap the + button to add\nyour first item.',
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyLarge
@@ -503,7 +500,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                                     color: Colors.white,
                                   ),
                                 ),
-                                trailing: Ttip(
+                                trailing: Tooltip(
                                   message: 'Delete item',
                                   child: IconButton(
                                     icon: Icon(Icons.delete_outline,
@@ -522,7 +519,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                         );
                       },
                     ),
-      floatingActionButton: Ttip(
+      floatingActionButton: Tooltip(
         message: 'Add item',
         child: FloatingActionButton.large(
           onPressed: _showInputModeDialog,
@@ -609,7 +606,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
 
   Future<void> _speak(String text) async {
     if (!mounted || _cancelled || AppVoicePolicy.ttsMuted) return;
-    final spoken = await AppLanguageController.instance.translate(text);
+    final spoken = text;
     setState(() {
       _isSpeaking = true;
       _prompt = spoken;
@@ -636,7 +633,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
       listenFor: const Duration(seconds: 10),
       pauseFor: const Duration(seconds: 2),
       cancelOnError: false,
-      localeId: AppLanguageController.instance.speechToTextLocaleId(),
+      localeId: englishSpeechToTextLocaleId(),
     );
 
     final result = await completer.future.timeout(
@@ -669,7 +666,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
       listenFor: const Duration(seconds: 10),
       pauseFor: const Duration(seconds: 2),
       cancelOnError: false,
-      localeId: AppLanguageController.instance.speechToTextLocaleId(),
+      localeId: englishSpeechToTextLocaleId(),
     );
 
     final result = await completer.future.timeout(
@@ -693,7 +690,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Tx('Please type or speak a section before adding.'),
+          content: Text('Please type or speak a section before adding.'),
         ),
       );
       return;
@@ -752,7 +749,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
             const SizedBox(height: 20),
 
             // Step label
-            Tx(
+            Text(
               _step == _VoiceStep.name
                   ? 'Step 1 of 2 — Item name'
                   : _step == _VoiceStep.category
@@ -764,7 +761,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
 
             // Prompt
             _prompt.isEmpty
-                ? Tx(
+                ? Text(
                     'Starting…',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -792,7 +789,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                           const Icon(Icons.mic,
                               size: 64, color: Color(0xFF6D5EF5)),
                           const SizedBox(height: 8),
-                          const Tx('Listening…',
+                          const Text('Listening…',
                               style: TextStyle(
                                   color: Color(0xFF6D5EF5),
                                   fontSize: 20,
@@ -817,7 +814,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                               const Icon(Icons.volume_up,
                                   size: 64, color: Color(0xFF3AE4C2)),
                               const SizedBox(height: 8),
-                              const Tx(
+                              const Text(
                                 'Speaking…',
                                 style: TextStyle(
                                     color: Color(0xFF3AE4C2),
@@ -840,7 +837,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
               if (_listeningCategory) ...[
                 const Icon(Icons.mic, size: 56, color: Color(0xFF6D5EF5)),
                 const SizedBox(height: 8),
-                const Tx(
+                const Text(
                   'Listening for section…',
                   style: TextStyle(
                     color: Color(0xFF6D5EF5),
@@ -868,8 +865,8 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                 textCapitalization: TextCapitalization.words,
                 style: const TextStyle(fontSize: 20, color: Colors.white),
                 decoration: const InputDecoration(
-                  label: Tx('Section'),
-                  hint: Tx('Type anything, e.g. Desserts, Coffee, Household'),
+                  label: Text('Section'),
+                  hint: Text('Type anything, e.g. Desserts, Coffee, Household'),
                   labelStyle: TextStyle(color: Colors.white70),
                   hintStyle: TextStyle(color: Colors.white38),
                   enabledBorder: OutlineInputBorder(
@@ -889,7 +886,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                           ? null
                           : _listenForCategoryField,
                       icon: const Icon(Icons.mic_none),
-                      label: const Tx('Speak section'),
+                      label: const Text('Speak section'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -898,7 +895,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                       onPressed: _listeningCategory || _isSpeaking
                           ? null
                           : _confirmVoiceAdd,
-                      child: const Tx('Add to list'),
+                      child: const Text('Add to list'),
                     ),
                   ),
                 ],
@@ -919,7 +916,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                     label: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Tx('Item: ',
+                        const Text('Item: ',
                             style: TextStyle(
                                 fontSize: 14, color: Colors.black87)),
                         Flexible(
@@ -946,7 +943,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
             TextButton.icon(
               onPressed: _cancel,
               icon: const Icon(Icons.close),
-              label: const Tx('Cancel'),
+              label: const Text('Cancel'),
             ),
           ],
         ),
