@@ -1,7 +1,3 @@
-# 🛒 my_low_vision_app
-
-A Flutter app designed for low-vision users, combining **grocery list management**, **aisle/shelf scanning**, and **voice-guided interaction** powered by VLM + OCR.
-
 ---
 
 ## 🚀 Quick Start
@@ -12,12 +8,11 @@ A Flutter app designed for low-vision users, combining **grocery list management
 cd backend2
 $env:FLASK_ENV = "development"
 .venv\Scripts\python app.py
-
-````
+```
 
 ---
 
-### 2. Set up and start VLM server (MAGIC)
+### 2️⃣ Set up and start VLM server (MAGIC)
 
 #### Go into the VLM folder
 
@@ -46,62 +41,18 @@ python -m pip install --upgrade pip setuptools wheel
 
 ### Check CUDA Version
 
-Before installing PyTorch, verify your CUDA version:
-
 ```bash
 nvidia-smi
 ```
-
-Look for output like:
-
-```
-CUDA Version: 12.8
-```
-
-👉 You will use this to pick the correct PyTorch install (e.g., `cu128`).
 
 ---
 
 ### Install PyTorch (GPU)
 
-⚠️ PyTorch must match your CUDA version.
-
-Find the correct command here:
-👉 [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/)
-
-**Example (CUDA 12.8):**
-
 ```bash
 pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
 ```
 
-If needed, replace `cu128` (e.g., `cu121`).
-
----
-
-### ⚡ (Optional) Flash Attention
-
-Try installing Flash Attention first:
-
-```bash
-pip install flash-attn --no-build-isolation
-````
-
-If this does not work, you need to install a prebuilt wheel that matches your device:
-
-👉 [https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/](https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/)
-
-Select the correct wheel based on:
-
-* CUDA version (e.g., `cu128`)
-* PyTorch version (e.g., `torch2.8`)
-* Python version (e.g., `cp310`)
-
-**Example (CUDA 12.8 + PyTorch 2.8.0):**
-
-```bash
-pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.7.16/flash_attn-2.8.3%2Bcu128torch2.8-cp310-cp310-linux_x86_64.whl
-```
 ---
 
 ### Install remaining requirements
@@ -110,23 +61,6 @@ pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases
 pip install -r requirements.txt
 pip install flask easyocr ultralytics
 ```
-
-If `decord` or `av` fail:
-
-* install separately, or
-* comment them out and retry
-
----
-
-### Verify Torch + CUDA
-
-```bash
-python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.version.cuda)"
-```
-
-✅ Expected:
-
-* `torch.cuda.is_available()` → `True`
 
 ---
 
@@ -146,13 +80,63 @@ python app_server_VLM.py
 
 ---
 
-### 3. Run Flutter app (from root folder)
+## 🌐 3️⃣ Start ngrok (Expose MAGIC server to internet)
+
+Open a **new terminal on MAGIC**:
+
+```bash
+./ngrok http 5010
+```
+
+You will see something like:
+
+```text
+Forwarding https://abc123.ngrok-free.dev -> http://localhost:5010
+```
+
+👉 Copy the **HTTPS URL**
+
+---
+
+### Update Vercel Environment Variable
+
+Set:
+
+```text
+OCR_PROXY_TARGET=https://abc123.ngrok-free.dev
+```
+
+Then **redeploy your Vercel app**.
+
+---
+
+### Test ngrok
+
+Open:
+
+```text
+https://abc123.ngrok-free.dev/health
+```
+
+If it works → your backend is connected.
+
+---
+
+## 📱 4️⃣ Run Flutter app (from root folder)
+
+### Local development (direct connection)
 
 ```bash
 flutter clean
 flutter pub get
 flutter run -d chrome --dart-define=OCR_BASE_URL=http://128.180.121.230:5010
 ```
+
+---
+
+### Deployed app (Vercel)
+
+No need to pass `OCR_BASE_URL` — it will use the Vercel proxy + ngrok.
 
 ---
 
@@ -164,11 +148,17 @@ flutter run -d chrome --dart-define=OCR_BASE_URL=http://128.180.121.230:5010
 | Android emulator            | `flutter run --dart-define=OCR_BASE_URL=http://10.0.2.2:5010`                  |
 | Physical phone (same Wi-Fi) | `flutter run --dart-define=OCR_BASE_URL=http://YOUR_PC_LAN_IP:5010`            |
 
-👉 Override anytime:
+---
 
-```bash
---dart-define=OCR_BASE_URL=http://your-server-ip:5010
-```
+## ⚠️ Important Notes
+
+* ngrok must stay running:
+
+  ```bash
+  ./ngrok http 5010
+  ```
+* If ngrok stops → your deployed app will break
+* Free ngrok URLs change every time you restart → update Vercel each time
 
 ---
 
@@ -209,18 +199,3 @@ flutter run -d chrome --dart-define=OCR_BASE_URL=http://128.180.121.230:5010
 * Fully accessible UX with audio guidance
 
 ---
-
-## 🔌 Server Ports
-
-| Service            | Port |
-| ------------------ | ---- |
-| Flask backend      | 5000 |
-| VLM server (MAGIC) | 5010 |
-
----
-
-## 📚 Project Resources
-
-* [https://docs.flutter.dev/](https://docs.flutter.dev/)
-* [https://supabase.com/docs](https://supabase.com/docs)
-* [https://github.com/JaidedAI/EasyOCR](https://github.com/JaidedAI/EasyOCR)
