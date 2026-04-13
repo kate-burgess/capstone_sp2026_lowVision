@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'app_colors.dart';
 import 'ocr_config.dart';
 
 class DisplayPictureScreen extends StatelessWidget {
@@ -146,7 +147,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F1115),
+                        color: kBrandCanvas,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: Colors.white12, width: 1),
                       ),

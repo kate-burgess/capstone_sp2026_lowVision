@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app_colors.dart';
 import 'take_picture_screen.dart';
 import 'supabase_auth_screen.dart';
 import 'grocery_list_screen.dart';
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
   static final _colorScheme = ColorScheme.fromSeed(
     seedColor: _seed,
     brightness: Brightness.dark,
-    surface: const Color(0xFF0F1115),
+    surface: kBrandCanvas,
     onSurface: const Color(0xFFF5F7FA),
     primary: const Color(0xFF6D5EF5),
     onPrimary: const Color(0xFFF5F7FA),
@@ -63,13 +64,15 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         textTheme: textTheme,
         fontFamilyFallback: const ['Atkinson Hyperlegible', 'Roboto'],
-        scaffoldBackgroundColor: const Color(0xFF0F1115),
+        scaffoldBackgroundColor: kBrandCanvas,
         appBarTheme: AppBarTheme(
-          backgroundColor: const Color(0xFF1A1D24),
+          backgroundColor: kBrandCanvas,
           foregroundColor: Colors.white,
           titleTextStyle: textTheme.titleLarge?.copyWith(color: Colors.white),
           centerTitle: true,
-          elevation: 2,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          surfaceTintColor: Colors.transparent,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(

@@ -8,6 +8,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
+import 'app_colors.dart';
 import 'main.dart';
 import 'ocr_config.dart';
 import 'take_picture_screen.dart';
@@ -1654,7 +1655,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     final unchecked = _uncheckedSorted;
     final checked = _items.where((i) => i.isChecked).toList();
     return Drawer(
-      backgroundColor: const Color(0xFF0F1115),
+      backgroundColor: kBrandCanvas,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
