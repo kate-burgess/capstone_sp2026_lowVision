@@ -320,7 +320,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
                               leading: IconButton(
-                                tooltip: 'Start shopping (VLM)',
+                                tooltip: 'Start grocery shopping',
                                 icon: Icon(Icons.shopping_cart,
                                     size: 36,
                                     color: theme.colorScheme.secondary),

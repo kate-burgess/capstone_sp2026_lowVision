@@ -299,7 +299,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     if (!mounted) return;
     setState(() {
       _ocrLoading = false;
-      _vlmAnswer = answer.isEmpty ? 'No VLM answer returned.' : answer;
+      _vlmAnswer = answer.isEmpty ? 'No grocery scan answer returned.' : answer;
     });
 
     await _speak(_vlmAnswer);
@@ -316,7 +316,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'VLM Output',
+                'Grocery scan',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
@@ -1068,7 +1068,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
             onPressed: _ocrLoading ? null : _onEndShopping,
           ),
           IconButton(
-            tooltip: 'Try with VLM',
+            tooltip: 'Try grocery scan',
             icon: const Icon(Icons.auto_awesome, size: 34),
             onPressed: (_lastShelfImageBytes == null || _ocrLoading)
                 ? null

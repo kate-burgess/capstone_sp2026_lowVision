@@ -54,6 +54,25 @@ String _readableAisleTitleFromOcr(String raw) {
   return collapsed;
 }
 
+/// OCR / UI placeholder when the sign had no readable text (e.g. server default).
+bool _isOcrNoTextPlaceholder(String raw) {
+  final t = raw.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  return t == 'no text found' ||
+      t == '(no text detected)' ||
+      t.contains('no text found');
+}
+
+String _noListMatchesInAisleMessage(String rawAisleText) {
+  if (_isOcrNoTextPlaceholder(rawAisleText)) {
+    return 'No text found.';
+  }
+  final label = _readableAisleTitleFromOcr(rawAisleText);
+  if (_isOcrNoTextPlaceholder(label)) {
+    return 'No text found.';
+  }
+  return 'You are in the $label. No items from your list are in this aisle. Keep moving to the next aisle.';
+}
+
 String _aisleWalkInLine(List<_Item> matches) {
   final names = matches.map((e) => e.name).toList();
   if (names.isEmpty) return '';
@@ -87,6 +106,16 @@ String _humanizeShelfLocationPhrases(String input) {
   rep('lower left', 'bottom shelf on the left');
   rep('lower right', 'bottom shelf on the right');
   return t;
+}
+
+/// Makes multi-product shelf replies easier to read (one flavor/location per line).
+String _expandShelfLinesForScreenReader(String input) {
+  var t = input.trim();
+  if (t.isEmpty) return t;
+  t = t.replaceAll(RegExp(r'\s*;\s*'), '\n');
+  t = t.replaceAll(RegExp(r'\s*•\s*'), '\n');
+  t = t.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+  return t.trim();
 }
 
 enum _Phase { aisleSign, aisleResults, shelf, shelfResults }
@@ -201,7 +230,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     _loadMenuOrder();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _speak(
-        'VLM shopping mode started for ${widget.listTitle}. Point your camera at the aisle sign and tap Scan Aisle Sign.',
+        'Grocery shopping mode started for ${widget.listTitle}. Point your camera at the aisle sign and tap Scan Aisle Sign.',
       );
     });
   }
@@ -447,7 +476,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
         );
       } else if (kIsWeb && res.statusCode >= 500) {
         buf.write(
-          ' Check your OCR/VLM server logs and CORS. The camera preview can still work when OCR fails.',
+          ' Check your OCR or grocery scan server logs and CORS. The camera preview can still work when OCR fails.',
         );
       }
       setState(() => _error = buf.toString());
@@ -483,20 +512,20 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
         try {
           final decoded = json.decode(body);
           if (decoded is Map<String, dynamic> && decoded['error'] is String) {
-            return 'VLM server error ${res.statusCode}: ${decoded['error']}';
+            return 'Grocery scan server error ${res.statusCode}: ${decoded['error']}';
           }
         } catch (_) {}
         final snippet = body.trim();
         return snippet.isEmpty
-            ? 'VLM server error ${res.statusCode}.'
-            : 'VLM server error ${res.statusCode}: $snippet';
+            ? 'Grocery scan server error ${res.statusCode}.'
+            : 'Grocery scan server error ${res.statusCode}: $snippet';
       }
 
       final decoded = json.decode(body) as Map<String, dynamic>;
       final answer = (decoded['answer'] as String? ?? '').trim();
-      return answer.isEmpty ? 'VLM returned an empty answer.' : answer;
+      return answer.isEmpty ? 'No description returned.' : answer;
     } catch (e) {
-      return 'VLM request failed: $e';
+      return 'Grocery scan request failed: $e';
     }
   }
 
@@ -526,7 +555,9 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     required bool targetFound,
   }) {
     final cleanedRaw = _vlmAnswerWithoutFoundTags(vlmAnswer);
-    final cleaned = _humanizeShelfLocationPhrases(cleanedRaw);
+    final cleaned = _expandShelfLinesForScreenReader(
+      _humanizeShelfLocationPhrases(cleanedRaw),
+    );
     final hasMatches = matchedNames.isNotEmpty;
 
     if (target != null && !targetFound) {
@@ -737,11 +768,10 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       item.aisle ??= _currentAisle;
     }
 
-    final aisleLabel = _readableAisleTitleFromOcr(text);
     setState(() {
       _phase = _Phase.aisleResults;
       _aisleStatusMessage = _aisleMatches.isEmpty
-          ? 'You are in the $aisleLabel. No items from your list are in this aisle. Keep moving to the next aisle.'
+          ? _noListMatchesInAisleMessage(text)
           : _aisleWalkInLine(_aisleMatches);
     });
 
@@ -867,10 +897,13 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     } else {
       question =
         'Do NOT read any text, labels, or signs. Use only visual appearance. '
-        'For each different product you can identify, give a separate short phrase: full product name including flavor or variant when you can tell (treat each flavor as a different item), '
-        'and approximate location using phrases like top shelf on the left or middle shelf on the right. '
-        'Do not group only by brand when flavors differ. '
-        'Be concise for a low-vision shopper.';
+        'For every distinct product on the shelf—including each flavor or variety of the same brand as its own item—write exactly ONE separate line. '
+        'Each line must give the full product name with flavor if visible, then a dash or comma, then that product’s shelf position only (phrases like top shelf on the left or middle shelf on the right). '
+        'Example format (style only):\n'
+        'Cheerios Honey Nut — middle shelf on the right\n'
+        'Cheerios Original — top shelf on the left\n'
+        'Never merge two flavors into one line. Never reply with only the brand if two flavors are visible. '
+        'Use a line break after every product so each flavor has its own location on its own line.';
     }
 
     final vlmAnswer = await _runVlmPredict(bytes, question: question);
@@ -1158,11 +1191,9 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       return _itemMatchesText(item, aisleWords);
     }).toList();
 
-    final aisleLabel = _readableAisleTitleFromOcr(value);
     if (matches.isEmpty) {
       if (!mounted) return;
-      final msg =
-          'You are in the $aisleLabel. No items from your list are in this aisle. Keep moving to the next aisle.';
+      final msg = _noListMatchesInAisleMessage(value);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -1710,10 +1741,10 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
   @override
   Widget build(BuildContext context) {
     final title = _phase == _Phase.aisleSign
-        ? 'VLM Aisle $_currentAisleLabel — Scan Sign'
+        ? 'Grocery Aisle $_currentAisleLabel — Scan Sign'
         : _phase == _Phase.shelf
-            ? 'VLM Aisle $_currentAisleLabel — Scan Shelf'
-            : 'VLM Aisle $_currentAisleLabel';
+            ? 'Grocery Aisle $_currentAisleLabel — Scan Shelf'
+            : 'Grocery Aisle $_currentAisleLabel';
 
     return PopScope(
       canPop: !_shoppingMenuOpen && !_fullScreenListOpen,
@@ -2009,15 +2040,19 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
             flex: 5,
             child: DecoratedBox(
               decoration: const BoxDecoration(color: Colors.black),
-              child: Center(
-                child: Image.memory(preview, fit: BoxFit.contain),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Center(
+                  child: Image.memory(preview, fit: BoxFit.contain),
+                ),
               ),
             ),
           ),
         Expanded(
           flex: preview != null ? 4 : 1,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -2050,7 +2085,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                     ),
                   ),
                 ],
-                const Spacer(),
+                const SizedBox(height: 24),
                 Row(
                   children: [
                     Expanded(
@@ -2109,15 +2144,19 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
             flex: 5,
             child: DecoratedBox(
               decoration: const BoxDecoration(color: Colors.black),
-              child: Center(
-                child: Image.memory(preview, fit: BoxFit.contain),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Center(
+                  child: Image.memory(preview, fit: BoxFit.contain),
+                ),
               ),
             ),
           ),
         Expanded(
           flex: preview != null ? 4 : 1,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -2127,10 +2166,13 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                   child: Text(
                     statusText,
                     style: const TextStyle(
-                        fontSize: 26, fontWeight: FontWeight.w700),
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 24),
                 Row(
                   children: [
                     Expanded(
