@@ -1,5 +1,3 @@
----
-
 ## 🚀 Quick Start
 
 ### 1️⃣ Start Flask Backend (Profiles & Lists)
@@ -197,5 +195,3 @@ No need to pass `OCR_BASE_URL` — it will use the Vercel proxy + ngrok.
 * Aisle scanner (OCR)
 * Shelf scanner (YOLO or VLM)
 * Fully accessible UX with audio guidance
-
----
