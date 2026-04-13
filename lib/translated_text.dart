@@ -71,3 +71,69 @@ class _TxState extends State<Tx> {
     );
   }
 }
+
+/// [Tooltip] with a message translated like [Tx].
+class Ttip extends StatefulWidget {
+  const Ttip({
+    super.key,
+    required this.message,
+    required this.child,
+    this.waitDuration,
+    this.showDuration,
+  });
+
+  final String message;
+  final Widget child;
+  final Duration? waitDuration;
+  final Duration? showDuration;
+
+  @override
+  State<Ttip> createState() => _TtipState();
+}
+
+class _TtipState extends State<Ttip> {
+  Future<String>? _future;
+  String? _boundEnglish;
+  String? _boundCode;
+
+  void _refreshFuture() {
+    final code = AppLanguageController.instance.googleCode;
+    if (_future != null &&
+        _boundEnglish == widget.message &&
+        _boundCode == code) {
+      return;
+    }
+    _boundEnglish = widget.message;
+    _boundCode = code;
+    _future = AppLanguageController.instance.translate(widget.message);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: AppLanguageController.instance,
+      builder: (context, _) {
+        _refreshFuture();
+        if (AppLanguageController.instance.googleCode == 'en') {
+          return Tooltip(
+            message: widget.message,
+            waitDuration: widget.waitDuration,
+            showDuration: widget.showDuration,
+            child: widget.child,
+          );
+        }
+        return FutureBuilder<String>(
+          future: _future,
+          builder: (context, snap) {
+            return Tooltip(
+              message: snap.data ?? widget.message,
+              waitDuration: widget.waitDuration,
+              showDuration: widget.showDuration,
+              child: widget.child,
+            );
+          },
+        );
+      },
+    );
+  }
+}

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'translated_text.dart';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -290,7 +291,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     if (bytes == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Scan or upload a shelf image first.')),
+        SnackBar(content: Tx('Scan or upload a shelf image first.')),
       );
       return;
     }
@@ -324,12 +325,12 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              const Tx(
                 'Grocery scan',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
-              Text(
+              Tx(
                 _vlmAnswer,
                 style: const TextStyle(fontSize: 18),
               ),
@@ -339,7 +340,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Close'),
+                      child: const Tx('Close'),
                     ),
                   ),
                 ],
@@ -522,23 +523,26 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    Tx(
                       'Target item: ${target.name}',
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _shelfStatusMessage.isEmpty
-                          ? 'Detected results shown above.'
-                          : _shelfStatusMessage,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    _shelfStatusMessage.isEmpty
+                        ? Tx(
+                            'Detected results shown above.',
+                            style: const TextStyle(fontSize: 16),
+                          )
+                        : Tx(
+                            _shelfStatusMessage,
+                            style: const TextStyle(fontSize: 16),
+                          ),
                     const SizedBox(height: 12),
                     CheckboxListTile(
                       value: checked,
                       onChanged: (v) => setModalState(() => checked = v ?? false),
-                      title: const Text('Check off this item'),
+                      title: const Tx('Check off this item'),
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                     const SizedBox(height: 8),
@@ -566,8 +570,11 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2))
                                 : const Icon(Icons.mic),
-                            label: Text(
-                                _speechAvailable ? 'Voice check-off' : 'Voice unavailable'),
+                            label: Tx(
+                              _speechAvailable
+                                  ? 'Voice check-off'
+                                  : 'Voice unavailable',
+                            ),
                           ),
                         ),
                       ],
@@ -578,7 +585,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(ctx),
-                            child: const Text('Keep scanning'),
+                            child: const Tx('Keep scanning'),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -592,7 +599,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                               if (!mounted) return;
                               Navigator.pop(ctx);
                             },
-                            child: const Text('Continue'),
+                            child: const Tx('Continue'),
                           ),
                         ),
                       ],
@@ -840,7 +847,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save "${item.name}".')),
+        SnackBar(content: Tx('Could not save "${item.name}".')),
       );
     }
   }
@@ -867,26 +874,26 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     final value = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Set Current Aisle'),
+        title: const Tx('Set Current Aisle'),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.text,
           decoration: const InputDecoration(
-            labelText: 'Aisle name or number',
-            hintText: 'Type aisle (e.g. dairy or 3)',
+            label: Tx('Aisle name or number'),
+            hint: Tx('Type aisle (e.g. dairy or 3)'),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx, controller.text.trim());
             },
-            child: const Text('Set Aisle'),
+            child: const Tx('Set Aisle'),
           ),
         ],
       ),
@@ -894,7 +901,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     if (value == null || value.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid aisle name or number.')),
+        SnackBar(content: Tx('Enter a valid aisle name or number.')),
       );
       return;
     }
@@ -903,7 +910,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       final parsed = int.parse(value);
       if (parsed <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enter a valid aisle number.')),
+          SnackBar(content: Tx('Enter a valid aisle number.')),
         );
         return;
       }
@@ -935,7 +942,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     if (matches.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No list items match aisle "$value".')),
+        SnackBar(content: Tx('No list items match aisle "$value".')),
       );
       await _speak('No list items match aisle $value. Try another aisle name.');
       return;
@@ -1001,7 +1008,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                 children: [
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Text(
+                    child: Tx(
                       'Check Off Grocery Items',
                       style:
                           TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -1022,7 +1029,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                                 await _autoAdvanceAfterManualCheckoff(item);
                               },
                               title: Text(item.name),
-                              subtitle: Text('Section: ${item.category}'),
+                              subtitle: Tx('Section: ${item.category}'),
                               controlAffinity: ListTileControlAffinity.leading,
                             ),
                           )
@@ -1035,7 +1042,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Close'),
+                          child: const Tx('Close'),
                         ),
                       ),
                     ],
@@ -1074,44 +1081,56 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Tx(title),
         actions: [
-          IconButton(
-            tooltip: 'End shopping',
-            icon: const Icon(Icons.stop_circle_outlined, size: 34),
-            onPressed: _ocrLoading ? null : _onEndShopping,
+          Ttip(
+            message: 'End shopping',
+            child: IconButton(
+              icon: const Icon(Icons.stop_circle_outlined, size: 34),
+              onPressed: _ocrLoading ? null : _onEndShopping,
+            ),
           ),
-          IconButton(
-            tooltip: 'Try grocery scan',
-            icon: const Icon(Icons.auto_awesome, size: 34),
-            onPressed: (_lastShelfImageBytes == null || _ocrLoading)
-                ? null
-                : _tryWithVlm,
+          Ttip(
+            message: 'Try grocery scan',
+            child: IconButton(
+              icon: const Icon(Icons.auto_awesome, size: 34),
+              onPressed: (_lastShelfImageBytes == null || _ocrLoading)
+                  ? null
+                  : _tryWithVlm,
+            ),
           ),
-          IconButton(
-            tooltip: 'Set aisle manually',
-            icon: const Icon(Icons.edit_location_alt, size: 34),
-            onPressed: _showAisleOverrideDialog,
+          Ttip(
+            message: 'Set aisle manually',
+            child: IconButton(
+              icon: const Icon(Icons.edit_location_alt, size: 34),
+              onPressed: _showAisleOverrideDialog,
+            ),
           ),
-          IconButton(
-            tooltip: 'Check off items',
-            icon: const Icon(Icons.checklist, size: 34),
-            onPressed: _showQuickCheckoffSheet,
+          Ttip(
+            message: 'Check off items',
+            child: IconButton(
+              icon: const Icon(Icons.checklist, size: 34),
+              onPressed: _showQuickCheckoffSheet,
+            ),
           ),
-          IconButton(
-            tooltip: _audioEnabled ? 'Mute audio' : 'Unmute audio',
-            icon: Icon(_audioEnabled ? Icons.volume_up : Icons.volume_off,
-                size: 34),
-            onPressed: () {
-              setState(() => _audioEnabled = !_audioEnabled);
-              if (!_audioEnabled) _tts.stop();
-            },
+          Ttip(
+            message: _audioEnabled ? 'Mute audio' : 'Unmute audio',
+            child: IconButton(
+              icon: Icon(_audioEnabled ? Icons.volume_up : Icons.volume_off,
+                  size: 34),
+              onPressed: () {
+                setState(() => _audioEnabled = !_audioEnabled);
+                if (!_audioEnabled) _tts.stop();
+              },
+            ),
           ),
           Builder(
-            builder: (ctx) => IconButton(
-              tooltip: 'View full list',
-              icon: const Icon(Icons.list_alt, size: 34),
-              onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+            builder: (ctx) => Ttip(
+              message: 'View full list',
+              child: IconButton(
+                icon: const Icon(Icons.list_alt, size: 34),
+                onPressed: () => Scaffold.of(ctx).openEndDrawer(),
+              ),
             ),
           ),
         ],
@@ -1140,8 +1159,11 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
             children: [
               if (_cameraError != null)
                 Center(
-                    child: Text(_cameraError!,
-                        style: const TextStyle(color: Color(0xFFFF6B6B))))
+                  child: Tx(
+                    _cameraError!,
+                    style: const TextStyle(color: Color(0xFFFF6B6B)),
+                  ),
+                )
               else if (frozen)
                 Stack(
                   fit: StackFit.expand,
@@ -1158,16 +1180,18 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                     if (_ocrLoading)
                       Container(
                         color: Colors.black87,
-                        child: const Center(
+                        child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              CircularProgressIndicator(
+                              const CircularProgressIndicator(
                                   color: Color(0xFF6D5EF5), strokeWidth: 4),
-                              SizedBox(height: 16),
-                              Text('Reading text…',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 24)),
+                              const SizedBox(height: 16),
+                              Tx(
+                                'Reading text…',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 24),
+                              ),
                             ],
                           ),
                         ),
@@ -1187,7 +1211,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                     color: Colors.black87,
                     padding: const EdgeInsets.symmetric(
                         vertical: 16, horizontal: 20),
-                    child: Text(
+                    child: Tx(
                       isAisle
                           ? 'Point at the aisle sign\nthen tap the button below'
                           : 'Point at the shelf\nthen tap the button below',
@@ -1203,13 +1227,15 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                     color: Colors.black54,
                     shape: const CircleBorder(),
                     clipBehavior: Clip.antiAlias,
-                    child: IconButton(
-                      iconSize: 32,
-                      padding: const EdgeInsets.all(12),
-                      tooltip: 'Switch camera',
-                      onPressed: _flipCamera,
-                      icon: const Icon(Icons.cameraswitch,
-                          color: Colors.white, size: 32),
+                    child: Ttip(
+                      message: 'Switch camera',
+                      child: IconButton(
+                        iconSize: 32,
+                        padding: const EdgeInsets.all(12),
+                        onPressed: _flipCamera,
+                        icon: const Icon(Icons.cameraswitch,
+                            color: Colors.white, size: 32),
+                      ),
                     ),
                   ),
                 ),
@@ -1226,7 +1252,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                       color: const Color(0xFF6D5EF5).withOpacity(0.95),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
+                    child: Tx(
                       'Target item: ${targetItem.name}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -1266,16 +1292,18 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
               if (!frozen && _ocrLoading)
                 Container(
                   color: Colors.black87,
-                  child: const Center(
+                  child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(
+                        const CircularProgressIndicator(
                             color: Color(0xFF6D5EF5), strokeWidth: 4),
-                        SizedBox(height: 16),
-                        Text('Reading text...',
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 24)),
+                        const SizedBox(height: 16),
+                        Tx(
+                          'Reading text...',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 24),
+                        ),
                       ],
                     ),
                   ),
@@ -1293,9 +1321,12 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                     color: Color(0xFFFF6B6B), size: 30),
                 const SizedBox(width: 10),
                 Expanded(
-                    child: Text(_ocrError!,
-                        style: const TextStyle(
-                            color: Color(0xFFFF6B6B), fontSize: 20))),
+                  child: Tx(
+                    _ocrError!,
+                    style: const TextStyle(
+                        color: Color(0xFFFF6B6B), fontSize: 20),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1319,7 +1350,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFF6D5EF5)),
                       ),
-                      child: Text(
+                      child: Tx(
                         _shelfStatusMessage,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
@@ -1341,7 +1372,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFF3AE4C2)),
                       ),
-                      child: Text(
+                      child: Tx(
                         _aisleStatusMessage,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
@@ -1365,8 +1396,10 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.camera_alt, size: 28),
-                        label: Text(isAisle ? 'Scan Aisle Sign' : 'Scan Shelf',
-                            style: const TextStyle(fontSize: 20)),
+                        label: Tx(
+                          isAisle ? 'Scan Aisle Sign' : 'Scan Shelf',
+                          style: const TextStyle(fontSize: 20),
+                        ),
                         style: ElevatedButton.styleFrom(
                             minimumSize: const Size(0, 56),
                             padding: const EdgeInsets.symmetric(vertical: 16)),
@@ -1380,7 +1413,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                               ? () => _onScanAisleSign(fromGallery: true)
                               : () => _onScanShelf(fromGallery: true)),
                       icon: const Icon(Icons.photo_library, size: 28),
-                      label: const Text('Upload', style: TextStyle(fontSize: 20)),
+                      label: const Tx('Upload', style: TextStyle(fontSize: 20)),
                       style: ElevatedButton.styleFrom(
                           minimumSize: const Size(0, 56),
                           padding: const EdgeInsets.symmetric(
@@ -1427,15 +1460,21 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         color: Color(0xFF6D5EF5), size: 32),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        _aisleOcrText.isEmpty
-                            ? '(no text detected)'
-                            : _aisleOcrText,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 20, color: Color(0xFF6D5EF5)),
-                      ),
+                      child: _aisleOcrText.isEmpty
+                          ? Tx(
+                              '(no text detected)',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 20, color: Color(0xFF6D5EF5)),
+                            )
+                          : Text(
+                              _aisleOcrText,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 20, color: Color(0xFF6D5EF5)),
+                            ),
                     ),
                   ],
                 ),
@@ -1447,7 +1486,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                   label: _aisleMatches.isEmpty
                       ? 'No list items match this aisle'
                       : '${_aisleMatches.length} item${_aisleMatches.length == 1 ? "" : "s"} in aisle $_currentAisleLabel',
-                  child: Text(
+                  child: Tx(
                     _aisleMatches.isEmpty
                         ? 'No list items match this aisle'
                         : '${_aisleMatches.length} item${_aisleMatches.length == 1 ? "" : "s"} in aisle $_currentAisleLabel:',
@@ -1459,11 +1498,14 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                 ),
               ),
               if (_aisleMatches.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: Text(
-                      'No items matched. You can still scan the shelf or go to the next aisle.',
-                      style: TextStyle(color: Colors.white70, fontSize: 20)),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Tx(
+                    'No items matched. You can still scan the shelf or go to the next aisle.',
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 20),
+                  ),
                 ),
               Expanded(
                 child: ListView(
@@ -1485,7 +1527,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                            subtitle: Text('Section: ${item.category}',
+                            subtitle: Tx('Section: ${item.category}',
                                 style: const TextStyle(fontSize: 18)),
                             controlAffinity: ListTileControlAffinity.leading,
                           ))
@@ -1502,7 +1544,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         child: OutlinedButton.icon(
                           onPressed: _onNextAisle,
                           icon: const Icon(Icons.skip_next, size: 28),
-                          label: const Text('Next Aisle',
+                          label: const Tx('Next Aisle',
                               style: TextStyle(fontSize: 20)),
                         ),
                       ),
@@ -1511,7 +1553,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _onGoToShelf,
                           icon: const Icon(Icons.view_agenda_outlined, size: 28),
-                          label: const Text('Scan Shelf',
+                          label: const Tx('Scan Shelf',
                               style: TextStyle(fontSize: 20)),
                         ),
                       ),
@@ -1557,15 +1599,21 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         color: Color(0xFF3AE4C2), size: 32),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        _shelfOcrText.isEmpty
-                            ? 'Shelf image saved'
-                            : _shelfOcrText,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 20, color: Color(0xFF3AE4C2)),
-                      ),
+                      child: _shelfOcrText.isEmpty
+                          ? Tx(
+                              'Shelf image saved',
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 20, color: Color(0xFF3AE4C2)),
+                            )
+                          : Text(
+                              _shelfOcrText,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 20, color: Color(0xFF3AE4C2)),
+                            ),
                     ),
                   ],
                 ),
@@ -1577,7 +1625,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                   label: _shelfMatches.isEmpty
                       ? 'Shelf image saved to server'
                       : '${_shelfMatches.length} item${_shelfMatches.length == 1 ? "" : "s"} found',
-                  child: Text(
+                  child: Tx(
                     _shelfMatches.isEmpty
                         ? 'Shelf image saved to server'
                         : '${_shelfMatches.length} item${_shelfMatches.length == 1 ? "" : "s"} found:',
@@ -1589,11 +1637,14 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                 ),
               ),
               if (_shelfMatches.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: Text(
-                      'Try scanning another shelf in this aisle, or move to the next aisle.',
-                      style: TextStyle(color: Colors.white70, fontSize: 20)),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Tx(
+                    'Try scanning another shelf in this aisle, or move to the next aisle.',
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 20),
+                  ),
                 ),
               Expanded(
                 child: ListView(
@@ -1615,7 +1666,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                            subtitle: Text('Section: ${item.category}',
+                            subtitle: Tx('Section: ${item.category}',
                                 style: const TextStyle(fontSize: 18)),
                             secondary: Icon(
                               item.isChecked
@@ -1641,7 +1692,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         child: OutlinedButton.icon(
                           onPressed: _onScanAnotherShelf,
                           icon: const Icon(Icons.add_a_photo_outlined, size: 28),
-                          label: const Text('Another Shelf',
+                          label: const Tx('Another Shelf',
                               style: TextStyle(fontSize: 20)),
                         ),
                       ),
@@ -1650,7 +1701,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _onNextAisle,
                           icon: const Icon(Icons.skip_next, size: 28),
-                          label: const Text('Next Aisle',
+                          label: const Tx('Next Aisle',
                               style: TextStyle(fontSize: 20)),
                         ),
                       ),
@@ -1680,26 +1731,32 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(widget.listTitle,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  widget.listTitle,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                Text('${checked.length} of ${_items.length} checked',
-                    style: const TextStyle(
-                        color: Color(0xFF6D5EF5), fontSize: 18)),
+                Tx(
+                  '${checked.length} of ${_items.length} checked',
+                  style: const TextStyle(
+                      color: Color(0xFF6D5EF5), fontSize: 18),
+                ),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
-            child: Text('REMAINING',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF6D5EF5).withOpacity(0.7),
-                    letterSpacing: 1.2)),
+            child: Tx(
+              'REMAINING',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF6D5EF5).withOpacity(0.7),
+                  letterSpacing: 1.2),
+            ),
           ),
           Expanded(
             child: ListView(
@@ -1723,7 +1780,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                       title: Text(item.name,
                           style: const TextStyle(
                               fontSize: 20, color: Colors.white)),
-                      subtitle: Text('Section: ${item.category}',
+                      subtitle: Tx('Section: ${item.category}',
                           style: const TextStyle(
                               fontSize: 16, color: Colors.white60)),
                       trailing: Checkbox(
@@ -1734,12 +1791,14 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
                   const Divider(),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
-                    child: Text('CHECKED OFF',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white.withOpacity(0.4),
-                            letterSpacing: 1.2)),
+                    child: Tx(
+                      'CHECKED OFF',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white.withOpacity(0.4),
+                          letterSpacing: 1.2),
+                    ),
                   ),
                   ...checked.map((item) => ListTile(
                         leading: const Icon(Icons.check_circle,

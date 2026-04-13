@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'translated_text.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -129,8 +130,9 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Error adding item: $e'),
-            backgroundColor: const Color(0xFFFF6B6B)),
+          content: Tx('Error adding item: $e'),
+          backgroundColor: const Color(0xFFFF6B6B),
+        ),
       );
       return false;
     }
@@ -151,12 +153,12 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete item'),
+        title: const Tx('Delete item'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            const Tx(
               'Are you sure you want to delete this item?',
               style: TextStyle(fontSize: 20),
             ),
@@ -175,11 +177,11 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: const Tx('Delete'),
           ),
         ],
       ),
@@ -195,8 +197,9 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Error deleting item: $e'),
-            backgroundColor: const Color(0xFFFF6B6B)),
+          content: Tx('Error deleting item: $e'),
+          backgroundColor: const Color(0xFFFF6B6B),
+        ),
       );
     }
   }
@@ -207,7 +210,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('How do you want to add an item?'),
+        title: const Tx('How do you want to add an item?'),
         contentPadding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -220,9 +223,9 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                 child: const Icon(Icons.keyboard_alt_outlined,
                     color: Colors.black),
               ),
-              title: const Text('Type it manually',
+              title: const Tx('Type it manually',
                   style: TextStyle(fontSize: 20)),
-              subtitle: const Text('Fill in item name and section',
+              subtitle: const Tx('Fill in item name and section',
                   style: TextStyle(fontSize: 16)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -239,13 +242,14 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                 child: Icon(Icons.mic,
                     color: _speechAvailable ? Colors.black : Colors.white),
               ),
-              title: const Text('Speak it',
+              title: const Tx('Speak it',
                   style: TextStyle(fontSize: 20)),
-              subtitle: Text(
-                  _speechAvailable
-                      ? 'Speak the item name, then type or speak any section you want'
-                      : 'Not available in this browser',
-                  style: const TextStyle(fontSize: 16)),
+              subtitle: Tx(
+                _speechAvailable
+                    ? 'Speak the item name, then type or speak any section you want'
+                    : 'Not available in this browser',
+                style: const TextStyle(fontSize: 16),
+              ),
               enabled: _speechAvailable,
               onTap: _speechAvailable
                   ? () {
@@ -260,7 +264,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
         ],
       ),
@@ -279,7 +283,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add item'),
+          title: const Tx('Add item'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -289,17 +293,16 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                 autofocus: true,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  labelText: 'Item name',
-                  hintText: 'e.g. Apples',
+                  label: Tx('Item name'),
+                  hint: Tx('e.g. Apples'),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: sectionController,
                 decoration: const InputDecoration(
-                  labelText: 'Section',
-                  hintText:
-                      'Type any section, e.g. Desserts, Dairy, Snacks',
+                  label: Tx('Section'),
+                  hint: Tx('Type any section, e.g. Desserts, Dairy, Snacks'),
                 ),
                 textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.done,
@@ -317,7 +320,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              child: const Tx('Cancel'),
             ),
             ElevatedButton(
               onPressed: () => _trySubmitManualAdd(
@@ -328,7 +331,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                 sectionController: sectionController,
                 nameFocus: nameFocus,
               ),
-              child: const Text('Add'),
+              child: const Tx('Add'),
             ),
           ],
         ),
@@ -355,7 +358,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       if (!parentContext.mounted) return;
       ScaffoldMessenger.of(parentContext).showSnackBar(
         const SnackBar(
-          content: Text('Enter a section (any name you like).'),
+          content: Tx('Enter a section (any name you like).'),
         ),
       );
       return;
@@ -405,10 +408,12 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
       appBar: AppBar(
         title: Text(widget.listTitle),
         actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh, size: 32),
-            onPressed: _fetchItems,
+          Ttip(
+            message: 'Refresh',
+            child: IconButton(
+              icon: const Icon(Icons.refresh, size: 32),
+              onPressed: _fetchItems,
+            ),
           ),
         ],
       ),
@@ -418,10 +423,12 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Text(_error!,
-                        style: theme.textTheme.bodyLarge
-                            ?.copyWith(color: theme.colorScheme.error),
-                        textAlign: TextAlign.center),
+                    child: Tx(
+                      _error!,
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(color: theme.colorScheme.error),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 )
               : _items.isEmpty
@@ -436,10 +443,12 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                                 color: theme.colorScheme.primary
                                     .withValues(alpha: 0.5)),
                             const SizedBox(height: 20),
-                            Text('No items yet',
-                                style: theme.textTheme.headlineMedium),
+                            Tx(
+                              'No items yet',
+                              style: theme.textTheme.headlineMedium,
+                            ),
                             const SizedBox(height: 8),
-                            Text(
+                            Tx(
                               'Tap the + button to add\nyour first item.',
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyLarge
@@ -494,14 +503,16 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                                     color: Colors.white,
                                   ),
                                 ),
-                                trailing: IconButton(
-                                  tooltip: 'Delete item',
-                                  icon: Icon(Icons.delete_outline,
-                                      size: 32,
-                                      color: theme.colorScheme.error),
-                                  onPressed: () => _confirmDeleteItem(
-                                    item['id'] as String,
-                                    item['name'] as String? ?? '',
+                                trailing: Ttip(
+                                  message: 'Delete item',
+                                  child: IconButton(
+                                    icon: Icon(Icons.delete_outline,
+                                        size: 32,
+                                        color: theme.colorScheme.error),
+                                    onPressed: () => _confirmDeleteItem(
+                                      item['id'] as String,
+                                      item['name'] as String? ?? '',
+                                    ),
                                   ),
                                 ),
                               );
@@ -511,10 +522,12 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                         );
                       },
                     ),
-      floatingActionButton: FloatingActionButton.large(
-        onPressed: _showInputModeDialog,
-        tooltip: 'Add item',
-        child: const Icon(Icons.add, size: 40),
+      floatingActionButton: Ttip(
+        message: 'Add item',
+        child: FloatingActionButton.large(
+          onPressed: _showInputModeDialog,
+          child: const Icon(Icons.add, size: 40),
+        ),
       ),
     );
   }
@@ -680,7 +693,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please type or speak a section before adding.'),
+          content: Tx('Please type or speak a section before adding.'),
         ),
       );
       return;
@@ -739,7 +752,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
             const SizedBox(height: 20),
 
             // Step label
-            Text(
+            Tx(
               _step == _VoiceStep.name
                   ? 'Step 1 of 2 — Item name'
                   : _step == _VoiceStep.category
@@ -750,12 +763,23 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
             const SizedBox(height: 16),
 
             // Prompt
-            Text(
-              _prompt.isEmpty ? 'Starting…' : _prompt,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white),
-            ),
+            _prompt.isEmpty
+                ? Tx(
+                    'Starting…',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white),
+                  )
+                : Text(
+                    _prompt,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white),
+                  ),
             const SizedBox(height: 24),
 
             if (_step == _VoiceStep.name) ...[
@@ -768,7 +792,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                           const Icon(Icons.mic,
                               size: 64, color: Color(0xFF6D5EF5)),
                           const SizedBox(height: 8),
-                          const Text('Listening…',
+                          const Tx('Listening…',
                               style: TextStyle(
                                   color: Color(0xFF6D5EF5),
                                   fontSize: 20,
@@ -787,17 +811,19 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                         ],
                       )
                     : _isSpeaking
-                        ? const Column(
-                            key: ValueKey('speaking'),
+                        ? Column(
+                            key: const ValueKey('speaking'),
                             children: [
-                              Icon(Icons.volume_up,
+                              const Icon(Icons.volume_up,
                                   size: 64, color: Color(0xFF3AE4C2)),
-                              SizedBox(height: 8),
-                              Text('Speaking…',
-                                  style: TextStyle(
-                                      color: Color(0xFF3AE4C2),
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 8),
+                              const Tx(
+                                'Speaking…',
+                                style: TextStyle(
+                                    color: Color(0xFF3AE4C2),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600),
+                              ),
                             ],
                           )
                         : const Icon(
@@ -814,7 +840,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
               if (_listeningCategory) ...[
                 const Icon(Icons.mic, size: 56, color: Color(0xFF6D5EF5)),
                 const SizedBox(height: 8),
-                const Text(
+                const Tx(
                   'Listening for section…',
                   style: TextStyle(
                     color: Color(0xFF6D5EF5),
@@ -842,8 +868,8 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                 textCapitalization: TextCapitalization.words,
                 style: const TextStyle(fontSize: 20, color: Colors.white),
                 decoration: const InputDecoration(
-                  labelText: 'Section',
-                  hintText: 'Type anything, e.g. Desserts, Coffee, Household',
+                  label: Tx('Section'),
+                  hint: Tx('Type anything, e.g. Desserts, Coffee, Household'),
                   labelStyle: TextStyle(color: Colors.white70),
                   hintStyle: TextStyle(color: Colors.white38),
                   enabledBorder: OutlineInputBorder(
@@ -863,7 +889,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                           ? null
                           : _listenForCategoryField,
                       icon: const Icon(Icons.mic_none),
-                      label: const Text('Speak section'),
+                      label: const Tx('Speak section'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -872,7 +898,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                       onPressed: _listeningCategory || _isSpeaking
                           ? null
                           : _confirmVoiceAdd,
-                      child: const Text('Add to list'),
+                      child: const Tx('Add to list'),
                     ),
                   ),
                 ],
@@ -890,7 +916,22 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                   Chip(
                     avatar: const Icon(Icons.check_circle,
                         size: 16, color: Color(0xFF3AE4C2)),
-                    label: Text('Item: $_itemName'),
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Tx('Item: ',
+                            style: TextStyle(
+                                fontSize: 14, color: Colors.black87)),
+                        Flexible(
+                          child: Text(
+                            _itemName,
+                            style: const TextStyle(
+                                fontSize: 14, color: Colors.black87),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 if (_categoryController.text.trim().isNotEmpty)
                   Chip(
@@ -905,7 +946,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
             TextButton.icon(
               onPressed: _cancel,
               icon: const Icon(Icons.close),
-              label: const Text('Cancel'),
+              label: const Tx('Cancel'),
             ),
           ],
         ),

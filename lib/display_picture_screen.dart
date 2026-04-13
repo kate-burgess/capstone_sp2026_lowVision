@@ -96,10 +96,12 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
       appBar: AppBar(
         title: const Tx('Photo & Extracted Text'),
         actions: [
-          IconButton(
-            tooltip: 'Re-run OCR',
-            onPressed: _isProcessing ? null : _performOCR,
-            icon: const Icon(Icons.refresh, size: 28),
+          Ttip(
+            message: 'Re-run OCR',
+            child: IconButton(
+              onPressed: _isProcessing ? null : _performOCR,
+              icon: const Icon(Icons.refresh, size: 28),
+            ),
           ),
         ],
       ),
@@ -152,20 +154,31 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                         border: Border.all(color: Colors.white12, width: 1),
                       ),
                       child: SingleChildScrollView(
-                        child: Text(
-                          _error ??
-                              (_extractedText.isEmpty
-                                  ? (_isProcessing
-                                      ? 'Processing image...'
-                                      : 'No text found')
-                                  : _extractedText),
-                          style: TextStyle(
-                            color: _error != null
-                                ? theme.colorScheme.error
-                                : const Color(0xFF6D5EF5),
-                            fontSize: 20,
-                          ),
-                        ),
+                        child: _error != null
+                            ? Tx(
+                                _error!,
+                                style: TextStyle(
+                                  color: theme.colorScheme.error,
+                                  fontSize: 20,
+                                ),
+                              )
+                            : _extractedText.isEmpty
+                                ? Tx(
+                                    _isProcessing
+                                        ? 'Processing image...'
+                                        : 'No text found',
+                                    style: const TextStyle(
+                                      color: Color(0xFF6D5EF5),
+                                      fontSize: 20,
+                                    ),
+                                  )
+                                : Text(
+                                    _extractedText,
+                                    style: const TextStyle(
+                                      color: Color(0xFF6D5EF5),
+                                      fontSize: 20,
+                                    ),
+                                  ),
                       ),
                     ),
                   ),

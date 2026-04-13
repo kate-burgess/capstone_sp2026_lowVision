@@ -51,10 +51,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   /// Google Translate language code; synced with [AppLanguageController].
   String _languageCode = 'en';
 
+  /// Spoken prompts (TTS); synced with [AppLanguageController].
+  AppTtsVoiceGender _voiceGender = AppTtsVoiceGender.woman;
+
   @override
   void initState() {
     super.initState();
     _languageCode = AppLanguageController.instance.googleCode;
+    _voiceGender = AppLanguageController.instance.voiceGender;
     _loadExistingProfile();
   }
 
@@ -75,8 +79,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           .eq('id', userId)
           .limit(1);
 
-      if (rows is List && rows.isNotEmpty) {
-        final profile = Map<String, dynamic>.from(rows.first as Map);
+      final list = rows as List<dynamic>;
+      if (list.isNotEmpty) {
+        final profile = Map<String, dynamic>.from(list.first as Map);
 
         _nameController.text = profile['full_name'] as String? ?? '';
 
@@ -99,6 +104,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         setState(() {
           _loading = false;
           _languageCode = AppLanguageController.instance.googleCode;
+          _voiceGender = AppLanguageController.instance.voiceGender;
         });
       }
     }
@@ -135,6 +141,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       });
 
       await AppLanguageController.instance.setGoogleCode(_languageCode);
+      await AppLanguageController.instance.setVoiceGender(_voiceGender);
 
       if (!mounted) return;
 
@@ -211,15 +218,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
                 TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full name',
-                    prefixIcon: Icon(Icons.person_outline),
+                  decoration: InputDecoration(
+                    label: const Tx('Full name'),
+                    prefixIcon: const Icon(Icons.person_outline),
                   ),
                   style: theme.textTheme.bodyLarge,
                   textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 28),
-                Tx('App language', style: theme.textTheme.titleLarge),
+                Tx('App language (BETA)', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 6),
                 Tx(
                   'Voice guidance and on-screen wording follow this language. Change it any time here.',
@@ -229,20 +236,51 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: _languageCode,
-                  decoration: const InputDecoration(
-                    labelText: 'Language',
-                    prefixIcon: Icon(Icons.language_outlined),
+                  decoration: InputDecoration(
+                    label: const Tx('Language'),
+                    prefixIcon: const Icon(Icons.language_outlined),
                   ),
                   style: theme.textTheme.bodyLarge,
                   items: [
                     for (final o in AppLanguageController.options)
                       DropdownMenuItem<String>(
                         value: o.googleCode,
-                        child: Text(o.label),
+                        child: Tx(o.label),
                       ),
                   ],
                   onChanged: (v) =>
                       setState(() => _languageCode = v ?? 'en'),
+                ),
+                const SizedBox(height: 28),
+                Tx('Voice for guidance', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 6),
+                Tx(
+                  'Spoken prompts in the store use this style. Pick the voice that sounds clearest to you.',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: Colors.white60),
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<AppTtsVoiceGender>(
+                  segments: [
+                    ButtonSegment(
+                      value: AppTtsVoiceGender.woman,
+                      label: Tx('Woman'),
+                    ),
+                    ButtonSegment(
+                      value: AppTtsVoiceGender.man,
+                      label: Tx('Man'),
+                    ),
+                  ],
+                  selected: {_voiceGender},
+                  onSelectionChanged: (s) {
+                    if (s.isEmpty) return;
+                    setState(() => _voiceGender = s.first);
+                  },
+                  multiSelectionEnabled: false,
+                  emptySelectionAllowed: false,
+                  style: SegmentedButton.styleFrom(
+                    textStyle: theme.textTheme.bodyLarge,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -260,7 +298,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   children: _dietOptions.map((opt) {
                     final selected = _selectedDiet.contains(opt);
                     return FilterChip(
-                      label: Text(opt),
+                      label: Tx(opt),
                       selected: selected,
                       onSelected: (v) => setState(() {
                         if (v) {
@@ -290,7 +328,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   children: _allergyOptions.map((opt) {
                     final selected = _selectedAllergies.contains(opt);
                     return FilterChip(
-                      label: Text(opt),
+                      label: Tx(opt),
                       selected: selected,
                       onSelected: (v) => setState(() {
                         if (v) {
@@ -316,9 +354,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       color: theme.colorScheme.error.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(_error!,
-                        style: theme.textTheme.bodyLarge
-                            ?.copyWith(color: theme.colorScheme.error)),
+                    child: Tx(
+                      _error!,
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(color: theme.colorScheme.error),
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],

@@ -169,7 +169,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                         color: theme.colorScheme.error.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(
+                      child: Tx(
                         _errorMessage!,
                         style: theme.textTheme.bodyLarge
                             ?.copyWith(color: theme.colorScheme.error),
@@ -181,7 +181,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                     TextFormField(
                       controller: _fullNameController,
                       decoration: const InputDecoration(
-                        labelText: 'Full name',
+                        label: Tx('Full name'),
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                       style: theme.textTheme.bodyLarge,
@@ -191,7 +191,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      label: Tx('Email'),
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
                     style: theme.textTheme.bodyLarge,
@@ -207,7 +207,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                   TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
-                      labelText: 'Password',
+                      label: Tx('Password'),
                       prefixIcon: Icon(Icons.lock_outline),
                     ),
                     style: theme.textTheme.bodyLarge,

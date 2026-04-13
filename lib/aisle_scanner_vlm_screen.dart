@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'translated_text.dart';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -279,7 +280,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
           if (msg.isNotEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
+                content: Tx(
                   'Speech recognition: $msg',
                   style: const TextStyle(fontSize: 16),
                 ),
@@ -353,7 +354,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
+              content: Tx(
                 'Could not start speech listening: $e',
                 style: const TextStyle(fontSize: 16),
               ),
@@ -1027,7 +1028,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
               border: Border.all(color: borderColor, width: 3),
             ),
             alignment: Alignment.center,
-            child: Text(
+            child: Tx(
               label,
               style: const TextStyle(
                 fontSize: 28,
@@ -1050,7 +1051,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text(
+        title: const Tx(
           'Looks like a match',
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
@@ -1059,12 +1060,26 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Looking for: $itemName',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Tx(
+                    'Looking for: ',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                  ),
+                  Expanded(
+                    child: Text(
+                      itemName,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
-              const Text(
+              const Tx(
                 'Do you want to check this item off your list?',
                 style: TextStyle(fontSize: 24, height: 1.3),
               ),
@@ -1148,7 +1163,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not refresh list: $e')),
+        SnackBar(content: Tx('Could not refresh list: $e')),
       );
     }
   }
@@ -1210,7 +1225,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
+          content: Tx(
             'Type or say an aisle name (for example: dairy or bakery).',
             style: TextStyle(fontSize: 18),
           ),
@@ -1283,7 +1298,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
           builder: (ctx, setModal) {
             final hasValue = combinedValue().isNotEmpty;
             return AlertDialog(
-              title: Text(
+              title: Tx(
                 employeeMode
                     ? 'Store employee: aisle name'
                     : 'Aisle name',
@@ -1309,7 +1324,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                             width: 2,
                           ),
                         ),
-                        child: const Text(
+                        child: const Tx(
                           'FOR STORE EMPLOYEE\n\n'
                           'Please look at this screen. The shopper needs the '
                           'aisle location.\n\n'
@@ -1325,7 +1340,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       ),
                       const SizedBox(height: 20),
                     ] else ...[
-                      const Text(
+                      const Tx(
                         'Type the aisle name, or tap the microphone and say it '
                         '(for example: "dairy" or "bakery"). Names only—no aisle '
                         'numbers.',
@@ -1337,8 +1352,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       controller: typeController,
                       style: const TextStyle(fontSize: 22),
                       decoration: const InputDecoration(
-                        labelText: 'Type aisle name',
-                        hintText: 'e.g. dairy, bakery, produce',
+                        label: Tx('Type aisle name'),
+                        hint: Tx('e.g. dairy, bakery, produce'),
                         labelStyle: TextStyle(fontSize: 20),
                         hintStyle: TextStyle(fontSize: 18),
                       ),
@@ -1349,7 +1364,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                     if (!_speechAvailable)
                       const Padding(
                         padding: EdgeInsets.only(bottom: 12),
-                        child: Text(
+                        child: Tx(
                           'Speech is not available here—use the text box above.',
                           style: TextStyle(fontSize: 18, color: Colors.white70),
                         ),
@@ -1392,7 +1407,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                                 });
                               }
                             },
-                      label: Text(
+                      label: Tx(
                         listening ? 'Listening…' : 'Tap microphone to speak',
                       ),
                     ),
@@ -1406,13 +1421,13 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                           }
                           await AppSpeech.I.stt.stop();
                         },
-                        child: const Text(
+                        child: const Tx(
                           'Stop listening',
                           style: TextStyle(fontSize: 20),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      const Tx(
                         'Allow the microphone if your browser asks. Wait until '
                         'the voice prompt finishes, then speak clearly—you should '
                         'see words appear. On the web, you have up to about a '
@@ -1421,26 +1436,45 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    Text(
-                      transcript.isEmpty
-                          ? 'Heard text will appear here.'
-                          : 'Heard: $transcript',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: transcript.isEmpty
-                            ? FontWeight.w400
-                            : FontWeight.w700,
-                        color:
-                            transcript.isEmpty ? Colors.white54 : Colors.white,
-                      ),
-                    ),
+                    transcript.isEmpty
+                        ? Tx(
+                            'Heard text will appear here.',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white54,
+                            ),
+                          )
+                        : Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Tx(
+                                'Heard: ',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  transcript,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                   ],
                 ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel', style: TextStyle(fontSize: 20)),
+                  child: const Tx('Cancel', style: TextStyle(fontSize: 20)),
                 ),
                 FilledButton(
                   onPressed: !hasValue
@@ -1450,7 +1484,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                           _applyAisleValueFromString(combinedValue());
                         },
                   child:
-                      const Text('Use this aisle', style: TextStyle(fontSize: 20)),
+                      const Tx('Use this aisle', style: TextStyle(fontSize: 20)),
                 ),
               ],
             );
@@ -1521,7 +1555,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
             children: [
               Icon(icon, size: 44, color: Colors.white),
               const SizedBox(width: 20),
-              Expanded(child: Text(label, maxLines: 2)),
+              Expanded(child: Tx(label, maxLines: 2)),
             ],
           ),
         ),
@@ -1613,7 +1647,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
+              Tx(
                 'Shopping menu',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontSize: 34,
@@ -1628,7 +1662,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text(
+              Tx(
                 'Use the grip icon on the right to drag options into any order. '
                 'Your order is saved for next time.',
                 style: theme.textTheme.bodyLarge?.copyWith(fontSize: 20),
@@ -1664,7 +1698,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: const Text('Resume shopping'),
+                  child: const Tx('Resume shopping'),
                 ),
               ),
             ],
@@ -1685,7 +1719,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save "${item.name}".')),
+        SnackBar(content: Tx('Could not save "${item.name}".')),
       );
     }
   }
@@ -1752,15 +1786,15 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                     minWidth: 76,
                     maxWidth: 108,
                   ),
-                  child: const FittedBox(
+                  child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.center,
                     child: Padding(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      child: Text(
+                          const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      child: Tx(
                         'Menu',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -1795,7 +1829,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
+          title: Tx(
             _fullScreenListOpen
                 ? 'Shopping list'
                 : _shoppingMenuOpen
@@ -1803,16 +1837,20 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                     : title,
           ),
           leading: _fullScreenListOpen
-              ? IconButton(
-                  tooltip: 'Close list',
-                  icon: const Icon(Icons.close),
-                  onPressed: _closeFullScreenList,
+              ? Ttip(
+                  message: 'Close list',
+                  child: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: _closeFullScreenList,
+                  ),
                 )
               : _shoppingMenuOpen
-                  ? IconButton(
-                      tooltip: 'Close menu',
-                      icon: const Icon(Icons.close),
-                      onPressed: _closeShoppingMenuWithCameraResume,
+                  ? Ttip(
+                      message: 'Close menu',
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: _closeShoppingMenuWithCameraResume,
+                      ),
                     )
                   : null,
           automaticallyImplyLeading:
@@ -1854,7 +1892,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text(
+              Tx(
                 'Tap items to check them off. Use Add items for more.',
                 style: theme.textTheme.bodyLarge?.copyWith(fontSize: 22),
                 textAlign: TextAlign.center,
@@ -1864,7 +1902,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                 height: 56,
                 child: FilledButton.icon(
                   icon: const Icon(Icons.add_shopping_cart, size: 28),
-                  label: const Text(
+                  label: const Tx(
                     'Add items',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                   ),
@@ -1908,7 +1946,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                   style: OutlinedButton.styleFrom(
                     textStyle: const TextStyle(fontSize: 22),
                   ),
-                  child: const Text('Back to shopping'),
+                  child: const Tx('Back to shopping'),
                 ),
               ),
             ],
@@ -1930,7 +1968,16 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
             fit: StackFit.expand,
             children: [
               if (_cameraError != null)
-                Center(child: Text(_cameraError!))
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Tx(
+                      _cameraError!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ),
+                )
               else if (showFrozenFrame)
                 Stack(
                   fit: StackFit.expand,
@@ -1964,15 +2011,43 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                   child: Container(
                     color: Colors.black87,
                     padding: const EdgeInsets.all(16),
-                    child: Text(
-                      isAisle
-                          ? 'Point at the aisle sign'
-                          : target != null
-                              ? 'Point at shelf for ${target.name}'
-                              : 'Point at the shelf',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 22),
-                    ),
+                    child: isAisle
+                        ? const Tx(
+                            'Point at the aisle sign',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white, fontSize: 22),
+                          )
+                        : target != null
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Tx(
+                                    'Point at shelf for:',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  Text(
+                                    target.name,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const Tx(
+                                'Point at the shelf',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                ),
+                              ),
                   ),
                 ),
                 Positioned(
@@ -1998,7 +2073,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                   child: Container(
                     color: Colors.black87,
                     padding: const EdgeInsets.all(16),
-                    child: const Text(
+                    child: const Tx(
                       'Processing photo…',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white, fontSize: 22),
@@ -2015,7 +2090,10 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(_error!, style: const TextStyle(color: Color(0xFFFF6B6B))),
+                  child: Tx(
+                    _error!,
+                    style: const TextStyle(color: Color(0xFFFF6B6B)),
+                  ),
                 ),
               Row(
                 children: [
@@ -2024,7 +2102,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       onPressed: (_loading || _takingPicture)
                           ? null
                           : (isAisle ? _onScanAisleSign : _onScanShelf),
-                      child: Text(isAisle ? 'Scan Aisle Sign' : 'Scan Shelf'),
+                      child: Tx(isAisle ? 'Scan Aisle Sign' : 'Scan Shelf'),
                     ),
                   ),
                 ],
@@ -2039,7 +2117,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                           : () => isAisle
                               ? _onScanAisleSign(fromGallery: true)
                               : _onScanShelf(fromGallery: true),
-                      child: const Text('Use Gallery Image'),
+                      child: const Tx('Use Gallery Image'),
                     ),
                   ),
                 ],
@@ -2056,7 +2134,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: const Text('Get Help from store employee'),
+                    child: const Tx('Get Help from store employee'),
                   ),
                 ),
               ],
@@ -2118,7 +2196,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       ),
                       onPressed: () =>
                           _showSpokenAisleSheet(employeeMode: false),
-                      child: const Text('Get Help from store employee'),
+                      child: const Tx('Get Help from store employee'),
                     ),
                   ),
                 ],
@@ -2136,7 +2214,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          child: const Text('Scan Shelf'),
+                          child: const Tx('Scan Shelf'),
                         ),
                       ),
                     ),
@@ -2152,7 +2230,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          child: const Text('Next Aisle'),
+                          child: const Tx('Next Aisle'),
                         ),
                       ),
                     ),
@@ -2170,9 +2248,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     final shouldShowMoveAlongRescan =
         _lastShelfTargetName != null && !_lastShelfTargetFound;
     final preview = _scanPreviewBytes;
-    final statusText = _shelfStatusMessage.isEmpty
-        ? 'Shelf scan finished.'
-        : _shelfStatusMessage;
+    final shelfStatusEmpty = _shelfStatusMessage.isEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2199,15 +2275,26 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
               children: [
                 Semantics(
                   liveRegion: true,
-                  label: statusText,
-                  child: Text(
-                    statusText,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
-                    ),
-                  ),
+                  label: shelfStatusEmpty
+                      ? 'Shelf scan finished.'
+                      : _shelfStatusMessage,
+                  child: shelfStatusEmpty
+                      ? const Tx(
+                          'Shelf scan finished.',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                          ),
+                        )
+                      : Text(
+                          _shelfStatusMessage,
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -2223,7 +2310,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          child: Text(
+                          child: Tx(
                             shouldShowMoveAlongRescan
                                 ? 'Move Along Aisle & Re-Scan'
                                 : 'Scan Shelf',
@@ -2243,7 +2330,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          child: const Text('Next Aisle'),
+                          child: const Tx('Next Aisle'),
                         ),
                       ),
                     ),
@@ -2251,7 +2338,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                 ),
                 if (shouldShowMoveAlongRescan) ...[
                   const SizedBox(height: 12),
-                  const Text(
+                  const Tx(
                     'Take a few steps along this aisle and scan the shelf again.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 22, color: Colors.white70),

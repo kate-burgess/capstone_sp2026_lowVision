@@ -94,7 +94,10 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating list: $e'), backgroundColor: const Color(0xFFFF6B6B)),
+        SnackBar(
+          content: Tx('Error creating list: $e'),
+          backgroundColor: const Color(0xFFFF6B6B),
+        ),
       );
     }
   }
@@ -106,7 +109,10 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting list: $e'), backgroundColor: const Color(0xFFFF6B6B)),
+        SnackBar(
+          content: Tx('Error deleting list: $e'),
+          backgroundColor: const Color(0xFFFF6B6B),
+        ),
       );
     }
   }
@@ -115,15 +121,15 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        content: const Text('Are you sure you want to delete this list?'),
+        content: const Tx('Are you sure you want to delete this list?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const Tx('Cancel'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Confirm'),
+            child: const Tx('Confirm'),
           ),
         ],
       ),
@@ -138,7 +144,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => AlertDialog(
-          title: const Text('New grocery list'),
+          title: const Tx('New grocery list'),
           content: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -146,18 +152,21 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                 child: TextField(
                   controller: titleController,
                   autofocus: true,
-                  decoration: const InputDecoration(hintText: 'List title'),
+                  decoration: const InputDecoration(
+                    hint: Tx('List title'),
+                  ),
                   onChanged: (_) => setModal(() {}),
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Speak list name',
-                icon: Icon(
-                  listening ? Icons.mic : Icons.mic_none,
-                  size: 28,
-                ),
-                onPressed: (!_speechAvailable || listening)
+              Ttip(
+                message: 'Speak list name',
+                child: IconButton(
+                  icon: Icon(
+                    listening ? Icons.mic : Icons.mic_none,
+                    size: 28,
+                  ),
+                  onPressed: (!_speechAvailable || listening)
                     ? null
                     : () async {
                         setModal(() => listening = true);
@@ -204,13 +213,14 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                           }
                         }
                       },
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: const Tx('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -219,7 +229,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                 Navigator.pop(ctx);
                 _createList(title);
               },
-              child: const Text('Create'),
+              child: const Tx('Create'),
             ),
           ],
         ),
@@ -241,19 +251,23 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Tx('My Grocery Lists'),
-        leading: IconButton(
-          tooltip: 'Edit profile',
-          icon: const Icon(Icons.person_outline, size: 32),
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-                builder: (_) => const ProfileSetupScreen(isEditing: true)),
+        leading: Ttip(
+          message: 'Edit profile',
+          child: IconButton(
+            icon: const Icon(Icons.person_outline, size: 32),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                  builder: (_) => const ProfileSetupScreen(isEditing: true)),
+            ),
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout, size: 32),
-            onPressed: _signOut,
+          Ttip(
+            message: 'Sign out',
+            child: IconButton(
+              icon: const Icon(Icons.logout, size: 32),
+              onPressed: _signOut,
+            ),
           ),
         ],
       ),
@@ -266,15 +280,17 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_error!,
-                            style: theme.textTheme.bodyLarge
-                                ?.copyWith(color: theme.colorScheme.error),
-                            textAlign: TextAlign.center),
+                        Tx(
+                          _error!,
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(color: theme.colorScheme.error),
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 20),
                         ElevatedButton.icon(
                           onPressed: _fetchLists,
                           icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
+                          label: const Tx('Retry'),
                         ),
                       ],
                     ),
@@ -292,13 +308,13 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                                 color: theme.colorScheme.primary
                                     .withOpacity(0.5)),
                             const SizedBox(height: 20),
-                            Text(
+                            Tx(
                               'No lists yet',
                               style: theme.textTheme.headlineMedium,
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                            Tx(
                               'Tap the + button to create\nyour first grocery list.',
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyLarge
@@ -323,9 +339,10 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
-                              leading: IconButton(
-                                tooltip: 'Start grocery shopping',
-                                icon: Icon(Icons.shopping_cart,
+                              leading: Ttip(
+                                message: 'Start grocery shopping',
+                                child: IconButton(
+                                  icon: Icon(Icons.shopping_cart,
                                     size: 36,
                                     color: theme.colorScheme.secondary),
                                 onPressed: () async {
@@ -353,11 +370,12 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                                     ScaffoldMessenger.of(context)
                                         .showSnackBar(
                                       SnackBar(
-                                          content:
-                                              Text('Error loading items: $e')),
+                                        content: Tx('Error loading items: $e'),
+                                      ),
                                     );
                                   }
                                 },
+                                ),
                               ),
                               title: Text(listTitle,
                                   style: theme.textTheme.bodyLarge?.copyWith(
@@ -368,12 +386,14 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                                           list['created_at'] as String),
                                     )
                                   : null,
-                              trailing: IconButton(
-                                tooltip: 'Delete list',
-                                icon: Icon(Icons.delete_outline,
-                                    size: 32,
-                                    color: theme.colorScheme.error),
-                                onPressed: () => _confirmDeleteList(listId),
+                              trailing: Ttip(
+                                message: 'Delete list',
+                                child: IconButton(
+                                  icon: Icon(Icons.delete_outline,
+                                      size: 32,
+                                      color: theme.colorScheme.error),
+                                  onPressed: () => _confirmDeleteList(listId),
+                                ),
                               ),
                               onTap: () => Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -388,10 +408,12 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                         },
                       ),
                     ),
-      floatingActionButton: FloatingActionButton.large(
-        onPressed: _showCreateDialog,
-        tooltip: 'New list',
-        child: const Icon(Icons.add, size: 40),
+      floatingActionButton: Ttip(
+        message: 'New list',
+        child: FloatingActionButton.large(
+          onPressed: _showCreateDialog,
+          child: const Icon(Icons.add, size: 40),
+        ),
       ),
     );
   }
