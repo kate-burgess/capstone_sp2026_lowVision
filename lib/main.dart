@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_colors.dart';
+import 'app_language.dart';
 import 'take_picture_screen.dart';
 import 'supabase_auth_screen.dart';
 import 'grocery_list_screen.dart';
@@ -17,7 +18,13 @@ Future<void> main() async {
   );
 
   await initCameras();
-  runApp(const MyApp());
+  await AppLanguageController.instance.loadFromPrefs();
+  runApp(
+    ListenableBuilder(
+      listenable: AppLanguageController.instance,
+      builder: (context, _) => const MyApp(),
+    ),
+  );
 }
 
 SupabaseClient get supabase => Supabase.instance.client;

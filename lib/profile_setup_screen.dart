@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'main.dart';
+
+import 'app_language.dart';
 import 'grocery_list_screen.dart';
+import 'main.dart';
+import 'translated_text.dart';
 
 /// Used both for initial profile setup (after signup) and for editing an
 /// existing profile. Pass isEditing: true when opening from settings.
@@ -45,9 +48,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final Set<String> _selectedDiet = {};
   final Set<String> _selectedAllergies = {};
 
+  /// Google Translate language code; synced with [AppLanguageController].
+  String _languageCode = 'en';
+
   @override
   void initState() {
     super.initState();
+    _languageCode = AppLanguageController.instance.googleCode;
     _loadExistingProfile();
   }
 
@@ -68,8 +75,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           .eq('id', userId)
           .limit(1);
 
-      if ((rows as List).isNotEmpty) {
-        final profile = rows.first as Map<String, dynamic>;
+      if (rows is List && rows.isNotEmpty) {
+        final profile = Map<String, dynamic>.from(rows.first as Map);
 
         _nameController.text = profile['full_name'] as String? ?? '';
 
@@ -88,7 +95,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     } catch (_) {
       // Silently ignore — the user can still fill in the form.
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _languageCode = AppLanguageController.instance.googleCode;
+        });
+      }
     }
   }
 
@@ -122,14 +134,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         'allergies': allergyText,
       });
 
+      await AppLanguageController.instance.setGoogleCode(_languageCode);
+
       if (!mounted) return;
 
       if (widget.isEditing) {
         // Return to the previous screen with a success message.
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated!'),
-            backgroundColor: Color(0xFF3AE4C2),
+          SnackBar(
+            content: Tx(
+              'Profile updated!',
+              style: const TextStyle(
+                fontSize: 18,
+                color: Color(0xFF232733),
+              ),
+            ),
+            backgroundColor: const Color(0xFF3AE4C2),
           ),
         );
         Navigator.of(context).pop();
@@ -150,7 +170,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     if (_loading) {
       return Scaffold(
         appBar: AppBar(
-            title: Text(widget.isEditing ? 'Edit profile' : 'Set up your profile')),
+            title: Tx(widget.isEditing ? 'Edit profile' : 'Set up your profile')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -158,7 +178,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Profile' : 'Set Up Your Profile'),
+        title: Tx(widget.isEditing ? 'Edit Profile' : 'Set Up Your Profile'),
         leading: widget.isEditing
             ? IconButton(
                 tooltip: 'Go back',
@@ -175,14 +195,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                Tx(
                   widget.isEditing
                       ? 'Update your profile'
                       : 'Tell us about yourself',
                   style: theme.textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 6),
-                Text(
+                Tx(
                   'This helps personalise your grocery lists.',
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: Colors.white60),
@@ -198,14 +218,41 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   style: theme.textTheme.bodyLarge,
                   textCapitalization: TextCapitalization.words,
                 ),
+                const SizedBox(height: 28),
+                Tx('App language', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 6),
+                Tx(
+                  'Voice guidance and on-screen wording follow this language. Change it any time here.',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: Colors.white60),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _languageCode,
+                  decoration: const InputDecoration(
+                    labelText: 'Language',
+                    prefixIcon: Icon(Icons.language_outlined),
+                  ),
+                  style: theme.textTheme.bodyLarge,
+                  items: [
+                    for (final o in AppLanguageController.options)
+                      DropdownMenuItem<String>(
+                        value: o.googleCode,
+                        child: Text(o.label),
+                      ),
+                  ],
+                  onChanged: (v) =>
+                      setState(() => _languageCode = v ?? 'en'),
+                ),
                 const SizedBox(height: 32),
 
-                Text('Dietary preferences',
-                    style: theme.textTheme.titleLarge),
+                Tx('Dietary preferences', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 6),
-                Text('Select all that apply',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: Colors.white60)),
+                Tx(
+                  'Select all that apply',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: Colors.white60),
+                ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 10,
@@ -229,11 +276,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                Text('Allergies', style: theme.textTheme.titleLarge),
+                Tx('Allergies', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 6),
-                Text('Select all that apply',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: Colors.white60)),
+                Tx(
+                  'Select all that apply',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: Colors.white60),
+                ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 10,
@@ -282,9 +331,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           height: 24,
                           child: CircularProgressIndicator(
                               strokeWidth: 3, color: Colors.black))
-                      : Text(widget.isEditing
-                          ? 'Save Changes'
-                          : 'Save and Continue'),
+                      : Tx(
+                          widget.isEditing
+                              ? 'Save Changes'
+                              : 'Save and Continue',
+                        ),
                 ),
                 const SizedBox(height: 16),
 
@@ -300,7 +351,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       style: TextButton.styleFrom(
                         textStyle: theme.textTheme.bodyMedium,
                       ),
-                      child: const Text('Skip for now'),
+                      child: Tx('Skip for now'),
                     ),
                   ),
               ],

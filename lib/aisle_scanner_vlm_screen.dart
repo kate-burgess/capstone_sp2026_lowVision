@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import 'app_language.dart';
 import 'app_speech.dart';
 import 'app_voice_policy.dart';
 import 'grocery_list_detail_screen.dart';
@@ -116,6 +117,16 @@ String _expandShelfLinesForScreenReader(String input) {
   t = t.replaceAll(RegExp(r'\s*•\s*'), '\n');
   t = t.replaceAll(RegExp(r'\n{3,}'), '\n\n');
   return t.trim();
+}
+
+/// VLM sometimes answers with a bare "None." when nothing is recognized.
+String _normalizeNoneItemCaption(String cleaned) {
+  final one =
+      cleaned.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+  if (one == 'none' || one == 'none.') {
+    return 'no item detected.';
+  }
+  return cleaned;
 }
 
 enum _Phase { aisleSign, aisleResults, shelf, shelfResults }
@@ -225,6 +236,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       },
     )..mount();
     _tts.awaitSpeakCompletion(true);
+    AppLanguageController.instance.addListener(_syncTtsLanguage);
+    unawaited(_syncTtsLanguage());
     _initSpeech();
     _initCamera();
     _loadMenuOrder();
@@ -235,8 +248,13 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     });
   }
 
+  Future<void> _syncTtsLanguage() async {
+    await AppLanguageController.instance.applyToTts(_tts);
+  }
+
   @override
   void dispose() {
+    AppLanguageController.instance.removeListener(_syncTtsLanguage);
     _shoppingVoiceHost.unmount();
     VlmShoppingSession.active = false;
     _camera?.dispose();
@@ -323,7 +341,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
           },
           listenFor: Duration(seconds: kIsWeb ? 60 : 30),
           pauseFor: kIsWeb ? null : const Duration(seconds: 8),
-          localeId: kIsWeb ? 'en-US' : null,
+          localeId: AppLanguageController.instance.speechToTextLocaleId(),
           listenOptions: SpeechListenOptions(
             listenMode:
                 kIsWeb ? ListenMode.confirmation : ListenMode.dictation,
@@ -564,8 +582,10 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     required bool targetFound,
   }) {
     final cleanedRaw = _vlmAnswerWithoutFoundTags(vlmAnswer);
-    final cleaned = _expandShelfLinesForScreenReader(
-      _humanizeShelfLocationPhrases(cleanedRaw),
+    final cleaned = _normalizeNoneItemCaption(
+      _expandShelfLinesForScreenReader(
+        _humanizeShelfLocationPhrases(cleanedRaw),
+      ),
     );
     final hasMatches = matchedNames.isNotEmpty;
 
@@ -740,11 +760,13 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     setState(() => _loading = false);
 
     if (text == null) {
+      final unreadable =
+          await AppLanguageController.instance.translate(_kUnreadableAisleMessage);
       setState(() {
         _showAisleUnclearEmployeeOption = true;
-        _aisleStatusMessage = _kUnreadableAisleMessage;
+        _aisleStatusMessage = unreadable;
       });
-      await _speak(_kUnreadableAisleMessage);
+      await _announceTts(unreadable);
       await _clearPreviewAndRestartCamera();
       return;
     }
@@ -752,12 +774,14 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     _aisleOcrText = text;
 
     if (!_looksLikeUsefulAisleText(text)) {
+      final unreadable =
+          await AppLanguageController.instance.translate(_kUnreadableAisleMessage);
       setState(() {
         _phase = _Phase.aisleSign;
-        _aisleStatusMessage = _kUnreadableAisleMessage;
+        _aisleStatusMessage = unreadable;
         _showAisleUnclearEmployeeOption = true;
       });
-      await _speak(_kUnreadableAisleMessage);
+      await _announceTts(unreadable);
       await _clearPreviewAndRestartCamera();
       return;
     }
@@ -772,14 +796,16 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       item.aisle ??= _currentAisle;
     }
 
+    final aisleEn = _aisleMatches.isEmpty
+        ? _noListMatchesInAisleMessage(text)
+        : _aisleWalkInLine(_aisleMatches);
+    final aisleUser = await AppLanguageController.instance.translate(aisleEn);
     setState(() {
       _phase = _Phase.aisleResults;
-      _aisleStatusMessage = _aisleMatches.isEmpty
-          ? _noListMatchesInAisleMessage(text)
-          : _aisleWalkInLine(_aisleMatches);
+      _aisleStatusMessage = aisleUser;
     });
 
-    await _speak(_aisleStatusMessage);
+    await _announceTts(aisleUser);
   }
 
   Future<void> _voiceCommandScanAisle() async {
@@ -947,19 +973,21 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
         !answerRejectsTarget &&
         (targetOnShelfByOcr || !shelfMatchesOtherListItem);
 
+    final shelfEn = _buildShelfStatusMessage(
+      vlmAnswer: vlmAnswer,
+      matchedNames: matchedNames,
+      target: target,
+      targetFound: targetFound,
+    );
+    final shelfUser = await AppLanguageController.instance.translate(shelfEn);
     setState(() {
-      _shelfStatusMessage = _buildShelfStatusMessage(
-        vlmAnswer: vlmAnswer,
-        matchedNames: matchedNames,
-        target: target,
-        targetFound: targetFound,
-      );
+      _shelfStatusMessage = shelfUser;
       _phase = _Phase.shelfResults;
       _lastShelfTargetFound = targetFound;
       _lastShelfTargetName = target?.name;
     });
 
-    await _speak(_shelfStatusMessage);
+    await _announceTts(shelfUser);
 
     if (target != null && targetFound) {
       if (!mounted) return;
@@ -1199,7 +1227,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
 
     if (matches.isEmpty) {
       if (!mounted) return;
-      final msg = _noListMatchesInAisleMessage(value);
+      final msg = await AppLanguageController.instance
+          .translate(_noListMatchesInAisleMessage(value));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -1208,16 +1237,17 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
           ),
         ),
       );
-      await _speak(msg);
+      await _announceTts(msg);
       return;
     }
 
     final walkIn = _aisleWalkInLine(matches);
+    final walkInUser = await AppLanguageController.instance.translate(walkIn);
     setState(() {
       _currentAisleLabel = value;
       _phase = _Phase.aisleResults;
       _aisleOcrText = value;
-      _aisleStatusMessage = walkIn;
+      _aisleStatusMessage = walkInUser;
       _shelfOcrText = '';
       _aisleMatches = matches;
       _shelfMatches = [];
@@ -1229,7 +1259,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     for (final item in matches) {
       item.aisle ??= _currentAisle;
     }
-    await _speak(walkIn);
+    await _announceTts(walkInUser);
   }
 
   Future<void> _showSpokenAisleSheet({required bool employeeMode}) async {
@@ -1677,7 +1707,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     Navigator.of(context).pop(true);
   }
 
-  Future<void> _speak(String text) async {
+  Future<void> _announceTts(String text) async {
     if (mounted) {
       setState(() => _lastSpoken = text);
     } else {
@@ -1685,6 +1715,11 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     }
     if (AppVoicePolicy.ttsMuted || !mounted) return;
     await _tts.speak(text);
+  }
+
+  Future<void> _speak(String english) async {
+    final text = await AppLanguageController.instance.translate(english);
+    await _announceTts(text);
   }
 
   /// Colorful “Menu” control with explicit size so AppBar actions lay out on web

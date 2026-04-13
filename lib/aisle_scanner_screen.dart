@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -9,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import 'app_colors.dart';
+import 'app_language.dart';
 import 'main.dart';
 import 'ocr_config.dart';
 import 'take_picture_screen.dart';
@@ -93,6 +95,8 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     _items = widget.items.map(_Item.fromMap).toList();
     _initialCheckedById = {for (final item in _items) item.id: item.isChecked};
     _tts.awaitSpeakCompletion(true);
+    AppLanguageController.instance.addListener(_syncTtsLanguage);
+    unawaited(_syncTtsLanguage());
     _initCamera();
     _initSpeech();
     WidgetsBinding.instance.addPostFrameCallback((_) => _speak(
@@ -101,8 +105,13 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
         ));
   }
 
+  Future<void> _syncTtsLanguage() async {
+    await AppLanguageController.instance.applyToTts(_tts);
+  }
+
   @override
   void dispose() {
+    AppLanguageController.instance.removeListener(_syncTtsLanguage);
     _camera?.dispose();
     _speech.stop();
     _tts.stop();
@@ -486,6 +495,7 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
       listenFor: const Duration(seconds: 5),
       pauseFor: const Duration(seconds: 2),
       cancelOnError: false,
+      localeId: AppLanguageController.instance.speechToTextLocaleId(),
     );
     await Future<void>.delayed(const Duration(seconds: 5));
     await _speech.stop();
@@ -646,11 +656,13 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     _aisleOcrText = text;
     if (!_looksLikeUsefulAisleText(text)) {
       final preview = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+      final enStatus = preview.isEmpty
+          ? 'No clear sign text detected. Retake aisle sign photo.'
+          : 'Sign text unclear: "$preview". Retake aisle sign photo.';
+      final statusT = await AppLanguageController.instance.translate(enStatus);
       setState(() {
         _phase = _Phase.aisleSign;
-        _aisleStatusMessage = preview.isEmpty
-            ? 'No clear sign text detected. Retake aisle sign photo.'
-            : 'Sign text unclear: "$preview". Retake aisle sign photo.';
+        _aisleStatusMessage = statusT;
       });
       await _speak(
           'This aisle sign image is unclear. Please go closer, hold steady, and retake the aisle sign photo.');
@@ -740,16 +752,17 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     final yoloText =
         yoloLabels.isEmpty ? 'YOLO detected: nothing clear.' : 'YOLO detected: ${yoloLabels.join(", ")}.';
 
+    final shelfEn = matchedNames.isEmpty
+        ? yoloText
+        : 'Detected list matches: $matchedNames. $yoloText';
+    final shelfUser = await AppLanguageController.instance.translate(shelfEn);
     setState(() {
-      if (matchedNames.isEmpty) {
-        _shelfStatusMessage = yoloText;
-      } else {
-        _shelfStatusMessage = 'Detected list matches: $matchedNames. $yoloText';
-      }
+      _shelfStatusMessage = shelfUser;
       _phase = _Phase.shelf;
     });
 
-    await _speak(_shelfStatusMessage);
+    if (!_audioEnabled || !mounted) return;
+    await _tts.speak(shelfUser);
     if (target != null) {
       if (!targetFound) {
         await _speak(
@@ -1036,8 +1049,9 @@ class _AisleScannerScreenState extends State<AisleScannerScreen> {
     );
   }
 
-  Future<void> _speak(String text) async {
+  Future<void> _speak(String english) async {
     if (!_audioEnabled || !mounted) return;
+    final text = await AppLanguageController.instance.translate(english);
     await _tts.speak(text);
   }
 

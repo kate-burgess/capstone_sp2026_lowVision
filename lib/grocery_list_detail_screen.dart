@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
+import 'app_language.dart';
 import 'app_speech.dart';
 import 'app_voice_policy.dart';
 import 'main.dart';
@@ -38,6 +39,8 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
   @override
   void initState() {
     super.initState();
+    AppLanguageController.instance.addListener(_syncListTts);
+    unawaited(_syncListTts());
     _fetchItems();
     _initSpeech();
     if (!VlmShoppingSession.active) {
@@ -74,8 +77,13 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _syncListTts() async {
+    await AppLanguageController.instance.applyToTts(_tts);
+  }
+
   @override
   void dispose() {
+    AppLanguageController.instance.removeListener(_syncListTts);
     _listVoiceHost?.unmount();
     _tts.stop();
     AppSpeech.I.stt.stop();
@@ -588,12 +596,13 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
 
   Future<void> _speak(String text) async {
     if (!mounted || _cancelled || AppVoicePolicy.ttsMuted) return;
+    final spoken = await AppLanguageController.instance.translate(text);
     setState(() {
       _isSpeaking = true;
-      _prompt = text;
+      _prompt = spoken;
     });
     await widget.tts.awaitSpeakCompletion(true);
-    await widget.tts.speak(text);
+    await widget.tts.speak(spoken);
     if (mounted) setState(() => _isSpeaking = false);
   }
 
@@ -614,6 +623,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
       listenFor: const Duration(seconds: 10),
       pauseFor: const Duration(seconds: 2),
       cancelOnError: false,
+      localeId: AppLanguageController.instance.speechToTextLocaleId(),
     );
 
     final result = await completer.future.timeout(
@@ -646,6 +656,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
       listenFor: const Duration(seconds: 10),
       pauseFor: const Duration(seconds: 2),
       cancelOnError: false,
+      localeId: AppLanguageController.instance.speechToTextLocaleId(),
     );
 
     final result = await completer.future.timeout(

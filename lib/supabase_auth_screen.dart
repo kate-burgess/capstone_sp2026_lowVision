@@ -1,12 +1,10 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'main.dart';
 import 'grocery_list_screen.dart';
+import 'main.dart';
 import 'profile_setup_screen.dart';
+import 'translated_text.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -133,7 +131,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isSignup ? 'Welcome' : 'Welcome Back'),
+        title: Tx(_isSignup ? 'Welcome' : 'Welcome Back'),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -154,7 +152,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
+                  Tx(
                     _isSignup
                         ? 'Create an account to get started'
                         : 'Sign in to continue',
@@ -231,7 +229,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 3, color: Colors.black),
                           )
-                        : Text(_isSignup ? 'Create Account' : 'Sign In'),
+                        : Tx(_isSignup ? 'Create Account' : 'Sign In'),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
@@ -247,7 +245,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                       foregroundColor: Colors.white,
                       textStyle: theme.textTheme.bodyMedium,
                     ),
-                    child: Text(
+                    child: Tx(
                       _isSignup
                           ? 'Already have an account? Log in'
                           : 'Need an account? Sign up',

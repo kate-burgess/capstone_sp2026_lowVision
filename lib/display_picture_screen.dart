@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'app_colors.dart';
 import 'ocr_config.dart';
+import 'translated_text.dart';
 
 class DisplayPictureScreen extends StatelessWidget {
   const DisplayPictureScreen({super.key, required this.imageBytes});
@@ -94,7 +94,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Photo & Extracted Text'),
+        title: const Tx('Photo & Extracted Text'),
         actions: [
           IconButton(
             tooltip: 'Re-run OCR',
@@ -127,7 +127,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                 children: [
                   Row(
                     children: [
-                      Text('Extracted Text',
+                      Tx('Extracted Text',
                           style: theme.textTheme.headlineMedium),
                       const SizedBox(width: 10),
                       if (_isProcessing)
@@ -173,7 +173,7 @@ class _DisplayPictureBodyState extends State<_DisplayPictureBody> {
                   ElevatedButton.icon(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.add_photo_alternate),
-                    label: Text(
+                    label: Tx(
                       kIsWeb ? 'Pick Another Image' : 'Take Another Picture',
                     ),
                   ),

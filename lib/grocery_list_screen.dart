@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'app_language.dart';
 import 'app_speech.dart';
+import 'translated_text.dart';
 import 'main.dart';
 import 'take_picture_screen.dart';
 import 'grocery_list_detail_screen.dart';
@@ -175,6 +177,8 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
                             pauseFor: const Duration(seconds: 3),
                             cancelOnError: true,
                             partialResults: true,
+                            localeId: AppLanguageController.instance
+                                .speechToTextLocaleId(),
                           );
                           final text = await completer.future.timeout(
                             const Duration(seconds: 14),
@@ -236,7 +240,7 @@ class _GroceryListScreenState extends State<GroceryListScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Grocery Lists'),
+        title: const Tx('My Grocery Lists'),
         leading: IconButton(
           tooltip: 'Edit profile',
           icon: const Icon(Icons.person_outline, size: 32),

@@ -47,6 +47,7 @@ dependencies:
   speech_to_text: ^7.0.0
   shared_preferences: ^2.3.3
   google_fonts: ^8.0.2
+  translator: ^1.0.0
 
   
 

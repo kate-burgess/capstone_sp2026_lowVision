@@ -108,7 +108,14 @@ Future<void> _takePicture() async {
     if (!mounted) return;
 
     if (decoded.isNotEmpty) {
-      List labels = decoded.map((obj) => obj["label"]).toList();
+      final labels = decoded.map((obj) {
+        final raw = '${obj["label"]}'.trim();
+        final lower = raw.toLowerCase();
+        if (lower == 'none' || lower == 'none.') {
+          return 'no item detected.';
+        }
+        return raw;
+      }).toList();
 
       setState(() {
         detectedLabel = labels.join(", ");
