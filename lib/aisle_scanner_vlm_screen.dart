@@ -542,9 +542,18 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     if (s.isEmpty) return s;
     s = s.replaceAll(RegExp(r'\bITEM\s+NOT\s+FOUND\b', caseSensitive: false), '');
     s = s.replaceAll(RegExp(r'\bITEM\s+FOUND\b', caseSensitive: false), '');
-    s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
-    s = s.replaceAll(RegExp(r'^\s*[.,;:]\s*'), '').trim();
-    s = s.replaceAll(RegExp(r'\s*[.,;:]\s*$'), '').trim();
+    // Preserve line breaks so multi-brand / multi-flavor lists stay readable.
+    final lines = s.split(RegExp(r'\r?\n'));
+    s = lines
+        .map((line) {
+          var t = line.replaceAll(RegExp(r'[ \t]+'), ' ').trim();
+          t = t.replaceAll(RegExp(r'^\s*[.,;:]\s*'), '').trim();
+          t = t.replaceAll(RegExp(r'\s*[.,;:]\s*$'), '').trim();
+          return t;
+        })
+        .where((line) => line.isNotEmpty)
+        .join('\n');
+    s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
     return s;
   }
 
@@ -571,20 +580,15 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
             : cleaned;
       }
       return cleaned.isEmpty
-          ? 'Your list on this shelf includes: $matchedNames.'
-          : '$cleaned\n\nYour list on this shelf includes: $matchedNames.';
+          ? 'Nothing clear on this shelf yet.'
+          : cleaned;
     }
 
-    // target != null && targetFound
-    final tName = target.name;
+    // target != null && targetFound — show vision description only (no name prefix).
     if (cleaned.isEmpty) {
-      return hasMatches
-          ? '$tName looks like a match. Shelf text also matched: $matchedNames.'
-          : '$tName looks like a match.';
+      return 'Looks like a match.';
     }
-    return hasMatches
-        ? '$tName: $cleaned\n\nList matches on shelf text: $matchedNames.'
-        : '$tName: $cleaned';
+    return cleaned;
   }
 
   bool _vlmAnswerMatchesTarget(String answer, _Item target) {
@@ -897,13 +901,15 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     } else {
       question =
         'Do NOT read any text, labels, or signs. Use only visual appearance. '
-        'For every distinct product on the shelf—including each flavor or variety of the same brand as its own item—write exactly ONE separate line. '
-        'Each line must give the full product name with flavor if visible, then a dash or comma, then that product’s shelf position only (phrases like top shelf on the left or middle shelf on the right). '
+        'List EVERY distinct branded product or package you can clearly see in this image, across the whole frame: left to right and top to bottom, including smaller or partly hidden items when you can tell what they are. '
+        'Do not stop after one or two big items—keep going until each clearly separate product has its own line. '
+        'Each flavor or variety of the same brand counts as a separate product with its own line. '
+        'Each line must be: full product name with flavor if visible, then a dash or comma, then that item’s shelf position (phrases like top shelf on the left or middle shelf on the right). '
         'Example format (style only):\n'
         'Cheerios Honey Nut — middle shelf on the right\n'
         'Cheerios Original — top shelf on the left\n'
-        'Never merge two flavors into one line. Never reply with only the brand if two flavors are visible. '
-        'Use a line break after every product so each flavor has its own location on its own line.';
+        'Never merge two different products or two flavors into one line. Never answer with only a single brand name if several different products are visible. '
+        'Put one line break after each product.';
     }
 
     final vlmAnswer = await _runVlmPredict(bytes, question: question);
@@ -1740,11 +1746,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _phase == _Phase.aisleSign
-        ? 'Grocery Aisle $_currentAisleLabel — Scan Sign'
-        : _phase == _Phase.shelf
-            ? 'Grocery Aisle $_currentAisleLabel — Scan Shelf'
-            : 'Grocery Aisle $_currentAisleLabel';
+    final title = 'Grocery Aisle $_currentAisleLabel';
 
     return PopScope(
       canPop: !_shoppingMenuOpen && !_fullScreenListOpen,

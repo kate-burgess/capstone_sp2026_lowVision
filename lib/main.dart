@@ -7,10 +7,6 @@ import 'take_picture_screen.dart';
 import 'supabase_auth_screen.dart';
 import 'grocery_list_screen.dart';
 import 'profile_setup_screen.dart';
-import 'global_voice_command_shell.dart';
-
-/// Root navigator for global voice commands and routing.
-final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,15 +57,8 @@ class MyApp extends StatelessWidget {
       displayColor: const Color(0xFFF5F7FA),
     );
     return MaterialApp(
-      navigatorKey: appNavigatorKey,
       title: 'Low Vision Daily Companion',
       debugShowCheckedModeBanner: false,
-      builder: (context, child) {
-        return GlobalVoiceCommandShell(
-          navigatorKey: appNavigatorKey,
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
       theme: ThemeData(
         colorScheme: _colorScheme,
         useMaterial3: true,
