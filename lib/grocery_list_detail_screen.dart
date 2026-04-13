@@ -8,7 +8,7 @@ import 'main.dart';
 
 /// Displays items in a grocery list and allows adding / toggling / deleting
 /// them. Items can be added manually (typed) or via a guided voice flow where
-/// TTS asks for the name and category and STT captures the answers.
+/// TTS asks for the name and section and STT captures the answers.
 class GroceryListDetailScreen extends StatefulWidget {
   final String listId;
   final String listTitle;
@@ -81,7 +81,8 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
     }
   }
 
-  Future<void> _addItem(String name, String category) async {
+  /// Inserts one row; [category] is the user-facing “section” (DB column name).
+  Future<bool> _addItem(String name, String category) async {
     final userId = supabase.auth.currentUser?.id;
     try {
       await supabase.from('grocery_items').insert({
@@ -92,13 +93,15 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
         'is_checked': false,
       });
       _fetchItems();
+      return true;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Error adding item: $e'),
             backgroundColor: const Color(0xFFFF6B6B)),
       );
+      return false;
     }
   }
 
@@ -147,7 +150,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
               ),
               title: const Text('Type it manually',
                   style: TextStyle(fontSize: 20)),
-              subtitle: const Text('Fill in item name and category',
+              subtitle: const Text('Fill in item name and section',
                   style: TextStyle(fontSize: 16)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -168,7 +171,7 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
                   style: TextStyle(fontSize: 20)),
               subtitle: Text(
                   _speechAvailable
-                      ? 'Speak the item name, then type or speak any category you want'
+                      ? 'Speak the item name, then type or speak any section you want'
                       : 'Not available in this browser',
                   style: const TextStyle(fontSize: 16)),
               enabled: _speechAvailable,
@@ -196,60 +199,105 @@ class _GroceryListDetailScreenState extends State<GroceryListDetailScreen> {
 
   void _showManualAddDialog() {
     final nameController = TextEditingController();
-    final categoryController = TextEditingController();
+    final sectionController = TextEditingController();
+    final nameFocus = FocusNode();
+    final parentContext = context;
 
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add item'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Item name',
-                hintText: 'e.g. Apples',
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add item'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                focusNode: nameFocus,
+                autofocus: true,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Item name',
+                  hintText: 'e.g. Apples',
+                ),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: sectionController,
+                decoration: const InputDecoration(
+                  labelText: 'Section',
+                  hintText:
+                      'Type any section, e.g. Desserts, Dairy, Snacks',
+                ),
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _trySubmitManualAdd(
+                  parentContext: parentContext,
+                  dialogContext: dialogContext,
+                  setDialogState: setDialogState,
+                  nameController: nameController,
+                  sectionController: sectionController,
+                  nameFocus: nameFocus,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                hintText: 'Type any category, e.g. Desserts, Dairy, Snacks',
+            ElevatedButton(
+              onPressed: () => _trySubmitManualAdd(
+                parentContext: parentContext,
+                dialogContext: dialogContext,
+                setDialogState: setDialogState,
+                nameController: nameController,
+                sectionController: sectionController,
+                nameFocus: nameFocus,
               ),
-              textCapitalization: TextCapitalization.words,
+              child: const Text('Add'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final name = nameController.text.trim();
-              final category = categoryController.text.trim();
-              if (name.isEmpty) return;
-              if (category.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Enter a category (any name you like).'),
-                  ),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              _addItem(name, category);
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
-    );
+    ).whenComplete(() {
+      nameFocus.dispose();
+      nameController.dispose();
+      sectionController.dispose();
+    });
+  }
+
+  Future<void> _trySubmitManualAdd({
+    required BuildContext parentContext,
+    required BuildContext dialogContext,
+    required StateSetter setDialogState,
+    required TextEditingController nameController,
+    required TextEditingController sectionController,
+    required FocusNode nameFocus,
+  }) async {
+    final name = nameController.text.trim();
+    final section = sectionController.text.trim();
+    if (name.isEmpty) return;
+    if (section.isEmpty) {
+      if (!parentContext.mounted) return;
+      ScaffoldMessenger.of(parentContext).showSnackBar(
+        const SnackBar(
+          content: Text('Enter a section (any name you like).'),
+        ),
+      );
+      return;
+    }
+    final ok = await _addItem(name, section);
+    if (!dialogContext.mounted) return;
+    if (ok) {
+      nameController.clear();
+      sectionController.clear();
+      setDialogState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (dialogContext.mounted) nameFocus.requestFocus();
+      });
+    }
   }
 
   // ── Voice entry ───────────────────────────────────────────────────────────
@@ -467,8 +515,8 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
     setState(() => _step = _VoiceStep.category);
 
     await _speak(
-      'What category is $_itemName? Type your category in the box, or tap '
-      'the microphone to say it. You can use any category name. When ready, '
+      'What section is $_itemName in? Type your section in the box, or tap '
+      'the microphone to say it. You can use any section name. When ready, '
       'tap Add to list.',
     );
   }
@@ -558,7 +606,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please type or speak a category before adding.'),
+          content: Text('Please type or speak a section before adding.'),
         ),
       );
       return;
@@ -621,7 +669,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
               _step == _VoiceStep.name
                   ? 'Step 1 of 2 — Item name'
                   : _step == _VoiceStep.category
-                      ? 'Step 2 of 2 — Category'
+                      ? 'Step 2 of 2 — Section'
                       : 'Done!',
               style: const TextStyle(color: Colors.white60, fontSize: 18),
             ),
@@ -693,7 +741,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                 const Icon(Icons.mic, size: 56, color: Color(0xFF6D5EF5)),
                 const SizedBox(height: 8),
                 const Text(
-                  'Listening for category…',
+                  'Listening for section…',
                   style: TextStyle(
                     color: Color(0xFF6D5EF5),
                     fontSize: 18,
@@ -720,7 +768,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                 textCapitalization: TextCapitalization.words,
                 style: const TextStyle(fontSize: 20, color: Colors.white),
                 decoration: const InputDecoration(
-                  labelText: 'Category',
+                  labelText: 'Section',
                   hintText: 'Type anything, e.g. Desserts, Coffee, Household',
                   labelStyle: TextStyle(color: Colors.white70),
                   hintStyle: TextStyle(color: Colors.white38),
@@ -741,7 +789,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                           ? null
                           : _listenForCategoryField,
                       icon: const Icon(Icons.mic_none),
-                      label: const Text('Speak category'),
+                      label: const Text('Speak section'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -775,7 +823,7 @@ class _VoiceEntrySheetState extends State<_VoiceEntrySheet> {
                     avatar: const Icon(Icons.check_circle,
                         size: 16, color: Color(0xFF3AE4C2)),
                     label: Text(
-                        'Category: ${_categoryController.text.trim()}'),
+                        'Section: ${_categoryController.text.trim()}'),
                   ),
               ],
             ),

@@ -459,16 +459,28 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
 
     final desc = cleaned.isEmpty ? '' : 'App detected: $cleaned';
 
-    final verdict = targetFound
-        ? 'For "${target.name}": this looks like a match.'
-        : 'For "${target.name}": not a match on this shelf. Move along this aisle and scan the shelf again.';
-
-    if (!hasMatches) {
-      return desc.isEmpty ? verdict : '$desc\n\n$verdict';
+    if (!targetFound) {
+      // No dialog for a miss: say it here (on-screen + TTS) and keep shopping.
+      final noMatch =
+          'No match found for "${target.name}" on this shelf. '
+          'If you are in the right aisle, keep moving along and scan the shelf again.';
+      if (!hasMatches) {
+        return desc.isEmpty ? noMatch : '$desc\n\n$noMatch';
+      }
+      if (desc.isEmpty) {
+        return 'Shelf text matched your list: $matchedNames.\n\n$noMatch';
+      }
+      return 'Shelf text matched your list: $matchedNames.\n\n$desc\n\n$noMatch';
     }
-    return desc.isEmpty
-        ? 'Shelf text matched your list: $matchedNames.\n\n$verdict'
-        : 'Shelf text matched your list: $matchedNames.\n\n$desc\n\n$verdict';
+
+    // Match: avoid repeating "looks like a match" here — [_showCheckOffItemDialog] only.
+    if (!hasMatches) {
+      return desc.isEmpty ? 'Shelf scan complete.' : desc;
+    }
+    if (desc.isEmpty) {
+      return 'Shelf text matched your list: $matchedNames.';
+    }
+    return 'Shelf text matched your list: $matchedNames.\n\n$desc';
   }
 
   bool _vlmAnswerMatchesTarget(String answer, _Item target) {
@@ -770,12 +782,9 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
 
     await _speak(_shelfStatusMessage);
 
-    if (target != null) {
+    if (target != null && targetFound) {
       if (!mounted) return;
-      final wantCheck = await _showCheckOffItemDialog(
-        found: targetFound,
-        itemName: target.name,
-      );
+      final wantCheck = await _showCheckOffItemDialog(itemName: target.name);
       if (!mounted) return;
       if (wantCheck == true) {
         setState(() => target.isChecked = true);
@@ -784,13 +793,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       } else if (wantCheck == false) {
         await _speak('Okay. ${target.name} is still on your list.');
       }
-      if (targetFound) {
-        await _speak('Go to the next aisle and scan.');
-      } else {
-        await _speak(
-          'Item not seen yet. Move along this aisle and scan the shelf again.',
-        );
-      }
+      await _speak('Go to the next aisle and scan.');
     }
   }
 
@@ -830,23 +833,19 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     );
   }
 
-  Future<bool?> _showCheckOffItemDialog({
-    required bool found,
-    required String itemName,
-  }) async {
-    final spokenPrompt = found
-        ? 'This looks like a match for $itemName. Do you want to check it off your list? Yes or no.'
-        : 'We do not think this shelf shows $itemName. Tap yes only if you still want to check it off your list anyway. Yes or no.';
-    await _speak(spokenPrompt);
+  Future<bool?> _showCheckOffItemDialog({required String itemName}) async {
+    await _speak(
+      'This looks like a match for $itemName. Do you want to check it off your list? Yes or no.',
+    );
     if (!mounted) return null;
 
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          found ? 'Looks like a match' : 'Not a match on this shelf',
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        title: const Text(
+          'Looks like a match',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -858,11 +857,9 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 16),
-              Text(
-                found
-                    ? 'Do you want to check this item off your list?'
-                    : 'Tap Yes only if you already have $itemName or want to remove it from your list anyway. Tap No to keep shopping for it.',
-                style: const TextStyle(fontSize: 24, height: 1.3),
+              const Text(
+                'Do you want to check this item off your list?',
+                style: TextStyle(fontSize: 24, height: 1.3),
               ),
               const SizedBox(height: 24),
               Row(
