@@ -146,6 +146,15 @@ String _normalizeNoneItemCaption(String cleaned) {
   return cleaned;
 }
 
+/// Natural-language list for TTS and UI, e.g. "A and B" or "A, B, and C".
+String _englishNameList(List<String> names) {
+  final n = names.map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+  if (n.isEmpty) return '';
+  if (n.length == 1) return n.first;
+  if (n.length == 2) return '${n[0]} and ${n[1]}';
+  return '${n.sublist(0, n.length - 1).join(', ')}, and ${n.last}';
+}
+
 enum _Phase { aisleSign, aisleResults, shelf, shelfResults }
 
 const _kMenuEnd = 'end';
@@ -217,7 +226,6 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
   List<_Item> _aisleMatches = [];
   List<_Item> _shelfMatches = [];
   List<_Item> _pendingShelfItems = [];
-  int _shelfPromptIndex = 0;
   bool _lastShelfTargetFound = false;
   String? _lastShelfTargetName;
 
@@ -773,12 +781,27 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     return out;
   }
 
-  _Item? get _currentShelfTarget {
-    if (_pendingShelfItems.isEmpty) return null;
-    if (_shelfPromptIndex < 0 || _shelfPromptIndex >= _pendingShelfItems.length) {
-      return null;
-    }
-    return _pendingShelfItems[_shelfPromptIndex];
+  /// Unchecked items still to find on shelves this aisle (same session).
+  List<_Item> get _uncheckedPendingShelfItems =>
+      _pendingShelfItems.where((i) => !i.isChecked).toList();
+
+  bool _shelfItemAppearsFound(
+    _Item target,
+    String vlmAnswer,
+    String shelfText,
+    List<_Item> shelfMatches,
+  ) {
+    final vlmSaysFound = _vlmSaysItemFound(vlmAnswer);
+    final answerNamesTarget = _vlmAnswerMatchesTarget(vlmAnswer, target);
+    final answerRejectsTarget = _vlmExplicitlyRejectsTarget(vlmAnswer, target);
+    final targetOnShelfByOcr =
+        _itemMatchesText(target, _tokenize(shelfText));
+    final shelfMatchesOtherListItem =
+        shelfMatches.any((i) => !identical(i, target));
+    return vlmSaysFound &&
+        answerNamesTarget &&
+        !answerRejectsTarget &&
+        (targetOnShelfByOcr || !shelfMatchesOtherListItem);
   }
 
   Future<void> _onScanAisleSign({bool fromGallery = false}) async {
@@ -832,7 +855,6 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
 
     _aisleMatches = _matchItems(text);
     _pendingShelfItems = _aisleMatches.where((i) => !i.isChecked).toList();
-    _shelfPromptIndex = 0;
 
     for (final item in _aisleMatches) {
       item.aisle ??= _currentAisle;
@@ -929,13 +951,23 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
 
     await _restartCamera();
 
-    final target = _currentShelfTarget;
-    if (target != null) {
+    final pending = _uncheckedPendingShelfItems;
+    if (pending.isEmpty) {
       await _speak(
-        'Point your camera at the shelf for ${target.name}, then tap Scan Shelf.',
+        'Nothing left to find in this aisle. Tap Next Aisle, or scan the aisle sign again.',
+      );
+      return;
+    }
+    if (pending.length == 1) {
+      await _speak(
+        'Point your camera at the shelf for ${pending.first.name}, then tap Scan Shelf.',
       );
     } else {
-      await _speak('Point your camera at the shelf, then tap Scan Shelf.');
+      final list = _englishNameList(pending.map((e) => e.name).toList());
+      await _speak(
+        'Point your camera at the shelf. Look for all of these on the same shelf: $list. '
+        'Then tap Scan Shelf.',
+      );
     }
   }
 
@@ -955,32 +987,44 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     await _speak('Reading shelf.');
 
     final shelfText = await _runOcr(bytes);
-    final target = _currentShelfTarget;
+    final targets = _uncheckedPendingShelfItems;
+    final singleTarget = targets.length == 1 ? targets.first : null;
 
     String question;
-    if (target != null) {
+    if (targets.isEmpty) {
       question =
-        'Do NOT read any text, labels, or signs. Use only visual appearance. '
-        'Check if any visible product visually matches "${target.name}" (include the exact type or flavor if that matters, not only the brand). '
-        'If it matches, list every distinct flavor or variant you can see that fits this product, one product per line. '
-        'Each line must be: full product name including flavor or variant, then a dash or comma, then that item’s shelf position (phrases like top shelf on the left or middle shelf on the right). '
-        'Put one line break after each product. '
-        'End with: ITEM FOUND. '
-        'If nothing matches, say: MOVE ALONG, NO ITEMS FOUND. '
-        'Be concise but do not skip extra flavors.';
+          'Do NOT read any text, labels, or signs. Use only visual appearance. '
+          'List EVERY distinct branded product or package you can clearly see in this image, across the whole frame: left to right and top to bottom, including smaller or partly hidden items when you can tell what they are. '
+          'Do not stop after one or two big items—keep going until each clearly separate product has its own line. '
+          'Each flavor or variety of the same brand counts as a separate product with its own line—never combine flavors. '
+          'Each line must be: full product name with flavor if visible, then a dash or comma, then that item’s shelf position (phrases like top shelf on the left or middle shelf on the right). '
+          'Every line must include where that specific product sits on the shelf. '
+          'Example format (style only):\n'
+          'Cheerios Honey Nut — middle shelf on the right\n'
+          'Cheerios Original — top shelf on the left\n'
+          'Never merge two different products or two flavors into one line. Never answer with only a single brand name if several different products are visible. '
+          'Put one line break after each product.';
+    } else if (singleTarget != null) {
+      question =
+          'Do NOT read any text, labels, or signs. Use only visual appearance. '
+          'Check if any visible product visually matches "${singleTarget.name}" (include the exact type or flavor if that matters, not only the brand). '
+          'If it matches, list every distinct flavor or variant you can see that fits this product, one product per line. '
+          'Each line must be: full product name including flavor or variant, then a dash or comma, then that item’s shelf position (phrases like top shelf on the left or middle shelf on the right). '
+          'Put one line break after each product. '
+          'End with: ITEM FOUND. '
+          'If nothing matches, say: MOVE ALONG, NO ITEMS FOUND. '
+          'Be concise but do not skip extra flavors.';
     } else {
+      final quoted = targets.map((t) => '"${t.name}"').join(', ');
       question =
-        'Do NOT read any text, labels, or signs. Use only visual appearance. '
-        'List EVERY distinct branded product or package you can clearly see in this image, across the whole frame: left to right and top to bottom, including smaller or partly hidden items when you can tell what they are. '
-        'Do not stop after one or two big items—keep going until each clearly separate product has its own line. '
-        'Each flavor or variety of the same brand counts as a separate product with its own line—never combine flavors. '
-        'Each line must be: full product name with flavor if visible, then a dash or comma, then that item’s shelf position (phrases like top shelf on the left or middle shelf on the right). '
-        'Every line must include where that specific product sits on the shelf. '
-        'Example format (style only):\n'
-        'Cheerios Honey Nut — middle shelf on the right\n'
-        'Cheerios Original — top shelf on the left\n'
-        'Never merge two different products or two flavors into one line. Never answer with only a single brand name if several different products are visible. '
-        'Put one line break after each product.';
+          'Do NOT read any text, labels, or signs. Use only visual appearance. '
+          'The shopper is looking for ALL of these list items on this shelf at the same time: $quoted. '
+          'For each list item you can clearly see (any matching package or flavor), output exactly one line: '
+          'full product name including variant if visible, then a dash or comma, then that item’s shelf position '
+          '(phrases like top shelf on the left or middle shelf on the right). '
+          'Only include lines for products that correspond to the list items above. One line per list item you can see. '
+          'If you can see at least one of these list items, end with: ITEM FOUND. '
+          'If none of these list items are visible, say: MOVE ALONG, NO ITEMS FOUND.';
     }
 
     final vlmAnswer = await _runVlmPredict(bytes, question: question);
@@ -998,54 +1042,105 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     _shelfMatches = _matchItems(shelfText);
 
     final matchedNames = _shelfMatches.map((i) => i.name).join(', ');
-    // "Found" must not rely on ITEM FOUND alone—the model can say that for the
-    // wrong product (e.g. target diapers, image peppers). Require the answer to
-    // actually mention the target, and if shelf OCR matches a *different* list
-    // item but not the target, treat as not found unless OCR also matches target.
-    final vlmSaysFound = _vlmSaysItemFound(vlmAnswer);
-    final answerNamesTarget =
-        target != null && _vlmAnswerMatchesTarget(vlmAnswer, target);
-    final answerRejectsTarget =
-        target != null && _vlmExplicitlyRejectsTarget(vlmAnswer, target);
-    final targetOnShelfByOcr =
-        target != null && _itemMatchesText(target, _tokenize(shelfText));
-    final shelfMatchesOtherListItem = target != null &&
-        _shelfMatches.any((i) => !identical(i, target));
 
-    final targetFound = target != null &&
-        vlmSaysFound &&
-        answerNamesTarget &&
-        !answerRejectsTarget &&
-        (targetOnShelfByOcr || !shelfMatchesOtherListItem);
+    final List<_Item> foundTargets;
+    if (targets.isEmpty) {
+      foundTargets = [];
+    } else if (singleTarget != null) {
+      final ok = _shelfItemAppearsFound(
+        singleTarget,
+        vlmAnswer,
+        shelfText,
+        _shelfMatches,
+      );
+      foundTargets = ok ? [singleTarget] : [];
+    } else {
+      foundTargets = targets
+          .where(
+            (t) => _shelfItemAppearsFound(t, vlmAnswer, shelfText, _shelfMatches),
+          )
+          .toList();
+    }
 
-    final shelfEn = _buildShelfStatusMessage(
-      vlmAnswer: vlmAnswer,
-      matchedNames: matchedNames,
-      target: target,
-      targetFound: targetFound,
-    );
-    final shelfUser = shelfEn;
+    final bool multiShelf = targets.length > 1;
+    String shelfUser;
+    if (multiShelf) {
+      shelfUser = _buildShelfStatusMessage(
+        vlmAnswer: vlmAnswer,
+        matchedNames: matchedNames,
+        target: null,
+        targetFound: false,
+      );
+      final wanted = _englishNameList(targets.map((e) => e.name).toList());
+      if (foundTargets.isEmpty) {
+        shelfUser =
+            'Could not confirm $wanted on this shelf. Move along or tap Scan Shelf to try again.\n\n$shelfUser';
+      } else {
+        final got = _englishNameList(foundTargets.map((e) => e.name).toList());
+        shelfUser = 'Spotted list items: $got.\n\n$shelfUser';
+      }
+    } else if (singleTarget != null) {
+      final targetFound = foundTargets.isNotEmpty;
+      shelfUser = _buildShelfStatusMessage(
+        vlmAnswer: vlmAnswer,
+        matchedNames: matchedNames,
+        target: singleTarget,
+        targetFound: targetFound,
+      );
+    } else {
+      shelfUser = _buildShelfStatusMessage(
+        vlmAnswer: vlmAnswer,
+        matchedNames: matchedNames,
+        target: null,
+        targetFound: false,
+      );
+    }
+
     setState(() {
       _shelfStatusMessage = shelfUser;
       _phase = _Phase.shelfResults;
-      _lastShelfTargetFound = targetFound;
-      _lastShelfTargetName = target?.name;
+      if (multiShelf) {
+        _lastShelfTargetFound = foundTargets.isNotEmpty;
+        _lastShelfTargetName = foundTargets.isEmpty
+            ? _englishNameList(targets.map((e) => e.name).toList())
+            : null;
+      } else if (singleTarget != null) {
+        _lastShelfTargetFound = foundTargets.isNotEmpty;
+        _lastShelfTargetName = singleTarget.name;
+      } else {
+        _lastShelfTargetFound = false;
+        _lastShelfTargetName = null;
+      }
     });
 
     await _announceTts(shelfUser);
 
-    if (target != null && targetFound) {
+    if (foundTargets.isEmpty) return;
+
+    for (final item in foundTargets) {
       if (!mounted) return;
-      final wantCheck = await _showCheckOffItemDialog(itemName: target.name);
+      final wantCheck = await _showCheckOffItemDialog(itemName: item.name);
       if (!mounted) return;
       if (wantCheck == true) {
-        setState(() => target.isChecked = true);
-        await _saveItemCheckedState(target);
-        await _speak('${target.name} checked off.');
+        setState(() => item.isChecked = true);
+        await _saveItemCheckedState(item);
+        await _speak('${item.name} checked off.');
       } else if (wantCheck == false) {
-        await _speak('Okay. ${target.name} is still on your list.');
+        await _speak('Okay. ${item.name} is still on your list.');
       }
-      await _speak('Go to the next aisle and scan.');
+    }
+
+    if (!mounted) return;
+    final still = _uncheckedPendingShelfItems;
+    if (still.isNotEmpty) {
+      final names = _englishNameList(still.map((e) => e.name).toList());
+      await _speak(
+        'Still looking for $names in this aisle. Tap Scan Shelf when you are ready to look again.',
+      );
+    } else {
+      await _speak(
+        'All items for this aisle are taken care of. Go to the next aisle and scan when you are ready.',
+      );
     }
   }
 
@@ -1169,7 +1264,6 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       _aisleMatches = [];
       _shelfMatches = [];
       _pendingShelfItems = [];
-      _shelfPromptIndex = 0;
       _showAisleUnclearEmployeeOption = false;
       _lastShelfTargetFound = false;
       _lastShelfTargetName = null;
@@ -1309,7 +1403,6 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       _shelfMatches = [];
       _shelfStatusMessage = '';
       _pendingShelfItems = matches.where((i) => !i.isChecked).toList();
-      _shelfPromptIndex = 0;
       _showAisleUnclearEmployeeOption = false;
     });
     for (final item in matches) {
@@ -1472,10 +1565,10 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Allow the microphone if your browser asks. Wait until '
-                        'the voice prompt finishes, then speak clearly—you should '
-                        'see words appear. On the web, you have up to about a '
-                        'minute; tap Stop listening when finished.',
+                        'Allow the microphone if your browser asks. Wait after '
+                        'the beep, then speak clearly, or spell the aisle—you should '
+                        'see words appear.'
+                        '; tap Stop listening when finished.',
                         style: TextStyle(fontSize: 17, color: Colors.white60),
                       ),
                     ],
@@ -2016,7 +2109,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
 
   Widget _buildCameraView() {
     final isAisle = _phase == _Phase.aisleSign;
-    final target = _currentShelfTarget;
+    final pendingShelf = _uncheckedPendingShelfItems;
     final showFrozenFrame = _scanPreviewBytes != null;
 
     return Column(
@@ -2075,37 +2168,62 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.white, fontSize: 22),
                           )
-                        : target != null
-                            ? Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text(
-                                    'Point at shelf for:',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                  Text(
-                                    target.name,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : const Text(
+                        : pendingShelf.isEmpty
+                            ? const Text(
                                 'Point at the shelf',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 22,
                                 ),
-                              ),
+                              )
+                            : pendingShelf.length == 1
+                                ? Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        'Point at shelf for:',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      Text(
+                                        pendingShelf.first.name,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        'Point at shelf. Look for:',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      Text(
+                                        _englishNameList(
+                                          pendingShelf.map((e) => e.name).toList(),
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                   ),
                 ),
                 Positioned(
