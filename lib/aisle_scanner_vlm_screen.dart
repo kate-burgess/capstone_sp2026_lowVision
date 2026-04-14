@@ -318,14 +318,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     if (mounted) setState(() {});
   }
 
-  /// Listens for an aisle name. On web, browser SpeechRecognition does not mark
-  /// results [finalResult] until after [stop]; we stop then wait briefly so the
-  /// plugin can promote the last partial. [onPartial] updates UI.
-  ///
-  /// Important: with both [listenFor] and [pauseFor], the plugin's first timer
-  /// uses **min** of the two—so pauseFor 5s ended listening ~5s after start even
-  /// when listenFor was 30s. That cut off speech right after TTS. Web uses
-  /// pauseFor: null so only listenFor limits the session.
+  /// Listens for an aisle name until **Stop listening** is tapped (or a long
+  /// safety timeout). [pauseFor] stays null so silence does not end the session.
   Future<String> _listenForSpokenAislePhrase({
     void Function(String partial)? onPartial,
   }) async {
@@ -337,13 +331,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     );
 
     var recognized = '';
-    final done = Completer<void>();
     final stopRequested = Completer<void>();
     _stopAisleListenRequested = stopRequested;
-
-    void maybeFinish() {
-      if (!done.isCompleted) done.complete();
-    }
 
     try {
       if (AppSpeech.I.stt.isListening) {
@@ -351,19 +340,17 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
         await Future<void>.delayed(const Duration(milliseconds: 200));
       }
 
+      Future<bool>? listenFuture;
       try {
-        await AppSpeech.I.stt.listen(
+        listenFuture = AppSpeech.I.stt.listen(
           onResult: (result) {
             recognized = result.recognizedWords;
             if (recognized.isNotEmpty) {
               onPartial?.call(recognized);
             }
-            if (result.finalResult) {
-              maybeFinish();
-            }
           },
-          listenFor: Duration(seconds: kIsWeb ? 60 : 30),
-          pauseFor: kIsWeb ? null : const Duration(seconds: 8),
+          listenFor: const Duration(minutes: 30),
+          pauseFor: null,
           localeId: englishSpeechToTextLocaleId(),
           listenOptions: SpeechListenOptions(
             listenMode:
@@ -387,20 +374,19 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       }
 
       await Future.any<void>([
-        done.future,
         stopRequested.future,
-        Future<void>.delayed(Duration(seconds: kIsWeb ? 62 : 32)),
+        listenFuture,
       ]);
 
       if (AppSpeech.I.stt.isListening) {
         await AppSpeech.I.stt.stop();
       }
+      try {
+        await listenFuture;
+      } catch (_) {}
 
-      if (kIsWeb && !done.isCompleted) {
-        await Future.any<void>([
-          done.future,
-          Future<void>.delayed(const Duration(milliseconds: 2500)),
-        ]);
+      if (kIsWeb) {
+        await Future<void>.delayed(const Duration(milliseconds: 2500));
       }
     } finally {
       _stopAisleListenRequested = null;
@@ -572,9 +558,12 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
 
   bool _vlmSaysItemFound(String answer) {
     final upper = answer.toUpperCase();
+    // Prefer an explicit positive tag when the model mixes phrases.
+    if (RegExp(r'\bITEM FOUND\b').hasMatch(upper)) return true;
     // Important: "ITEM NOT FOUND" contains the substring "ITEM FOUND".
     if (upper.contains('ITEM NOT FOUND')) return false;
-    return RegExp(r'\bITEM FOUND\b').hasMatch(upper);
+    if (upper.contains('NO ITEMS FOUND')) return false;
+    return false;
   }
 
   /// Strips VLM footer phrases so the visible summary matches our [targetFound] logic.
@@ -583,6 +572,16 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     if (s.isEmpty) return s;
     s = s.replaceAll(RegExp(r'\bITEM\s+NOT\s+FOUND\b', caseSensitive: false), '');
     s = s.replaceAll(RegExp(r'\bITEM\s+FOUND\b', caseSensitive: false), '');
+    s = s.replaceAll(
+      RegExp(
+        r'\bMOVE\s+ALONG\s*,?\s*NO\s+ITEMS\s+FOUND\b',
+        caseSensitive: false,
+      ),
+      '',
+    );
+    s = s.replaceAll(RegExp(r'\bNO\s+ITEMS\s+FOUND\b', caseSensitive: false), '');
+    s = s.replaceAll(RegExp(r'\bMOVE\s+ALONG\b', caseSensitive: false), '');
+    s = s.replaceAll(RegExp(r'\bNOTHING\s+MATCHES\b', caseSensitive: false), '');
     // Preserve line breaks so multi-brand / multi-flavor lists stay readable.
     final lines = s.split(RegExp(r'\r?\n'));
     s = lines
@@ -598,6 +597,78 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     return s;
   }
 
+  /// One line per distinct flavor/variant; merge duplicate facings of the same product.
+  String _dedupeShelfLinesByProduct(String input) {
+    final lines = input
+        .split(RegExp(r'\r?\n'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (lines.length <= 1) return input.trim();
+
+    final locsByKey = <String, List<String>>{};
+    final labelByKey = <String, String>{};
+
+    for (final line in lines) {
+      final split = _splitShelfLineProductAndLocation(line);
+      if (split == null) {
+        final k = '__line_${labelByKey.length}';
+        labelByKey[k] = line;
+        locsByKey[k] = [];
+        continue;
+      }
+      final key = split.$1.toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+      labelByKey.putIfAbsent(key, () => split.$1);
+      locsByKey.putIfAbsent(key, () => []);
+      final loc = split.$2.trim();
+      if (loc.isNotEmpty &&
+          !locsByKey[key]!
+              .any((l) => l.toLowerCase() == loc.toLowerCase())) {
+        locsByKey[key]!.add(loc);
+      }
+    }
+
+    final out = StringBuffer();
+    for (final key in labelByKey.keys) {
+      final product = labelByKey[key]!;
+      final locs = locsByKey[key] ?? [];
+      final locStr =
+          locs.map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+      if (locStr.isEmpty) {
+        out.writeln(product);
+      } else if (locStr.length == 1) {
+        out.writeln('$product — ${locStr.first}');
+      } else {
+        out.writeln('$product — ${locStr.join('; ')}');
+      }
+    }
+    return out.toString().trim();
+  }
+
+  /// Returns (product label, location phrase) using first strong separator.
+  (String, String)? _splitShelfLineProductAndLocation(String line) {
+    final separators = [' — ', ' – ', ' - ', '—', '–'];
+    for (final sep in separators) {
+      final i = line.indexOf(sep);
+      if (i > 0) {
+        final product = line.substring(0, i).trim();
+        final loc = line.substring(i + sep.length).trim();
+        if (product.isNotEmpty) return (product, loc);
+      }
+    }
+    return null;
+  }
+
+  String _shelfDisplayFromVlmAnswer(String vlmAnswer) {
+    final cleanedRaw = _vlmAnswerWithoutFoundTags(vlmAnswer);
+    final cleaned = _normalizeNoneItemCaption(
+      _expandShelfLinesForScreenReader(
+        _humanizeShelfLocationPhrases(cleanedRaw),
+      ),
+    );
+    return _dedupeShelfLinesByProduct(cleaned);
+  }
+
   String _buildShelfStatusMessage({
     required String vlmAnswer,
     required String matchedNames,
@@ -605,9 +676,11 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     required bool targetFound,
   }) {
     final cleanedRaw = _vlmAnswerWithoutFoundTags(vlmAnswer);
-    final cleaned = _normalizeNoneItemCaption(
-      _expandShelfLinesForScreenReader(
-        _humanizeShelfLocationPhrases(cleanedRaw),
+    final cleaned = _dedupeShelfLinesByProduct(
+      _normalizeNoneItemCaption(
+        _expandShelfLinesForScreenReader(
+          _humanizeShelfLocationPhrases(cleanedRaw),
+        ),
       ),
     );
     final hasMatches = matchedNames.isNotEmpty;
@@ -639,6 +712,12 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     final targetWords = _tokenize(target.name);
     for (final t in targetWords) {
       if (answerWords.any((w) => _isFuzzyTokenMatch(t, w))) return true;
+    }
+    final compact =
+        target.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (compact.length > 3) {
+      final a = answer.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      if (a.contains(compact)) return true;
     }
     return false;
   }
@@ -791,7 +870,14 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     String shelfText,
     List<_Item> shelfMatches,
   ) {
-    final vlmSaysFound = _vlmSaysItemFound(vlmAnswer);
+    final taggedFound = _vlmSaysItemFound(vlmAnswer);
+    final explicitNeg = !taggedFound &&
+        (RegExp(r'\bNO\s+ITEMS\s+FOUND\b', caseSensitive: false)
+                .hasMatch(vlmAnswer) ||
+            RegExp(r'\bMOVE\s+ALONG\b', caseSensitive: false)
+                .hasMatch(vlmAnswer));
+    final vlmSaysFound = taggedFound ||
+        (!explicitNeg && _vlmAnswerMatchesTarget(vlmAnswer, target));
     final answerNamesTarget = _vlmAnswerMatchesTarget(vlmAnswer, target);
     final answerRejectsTarget = _vlmExplicitlyRejectsTarget(vlmAnswer, target);
     final targetOnShelfByOcr =
@@ -994,37 +1080,31 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     if (targets.isEmpty) {
       question =
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
-          'List EVERY distinct branded product or package you can clearly see in this image, across the whole frame: left to right and top to bottom, including smaller or partly hidden items when you can tell what they are. '
-          'Do not stop after one or two big items—keep going until each clearly separate product has its own line. '
-          'Each flavor or variety of the same brand counts as a separate product with its own line—never combine flavors. '
-          'Each line must be: full product name with flavor if visible, then a dash or comma, then that item’s shelf position (phrases like top shelf on the left or middle shelf on the right). '
-          'Every line must include where that specific product sits on the shelf. '
-          'Example format (style only):\n'
-          'Cheerios Honey Nut — middle shelf on the right\n'
-          'Cheerios Original — top shelf on the left\n'
-          'Never merge two different products or two flavors into one line. Never answer with only a single brand name if several different products are visible. '
-          'Put one line break after each product.';
+          'List distinct branded products you can clearly see (each different flavor or variety gets its own line). '
+          'If many facings are the same flavor, describe that flavor once with its general shelf area—do not repeat the same flavor for each physical unit. '
+          'Each line: product name with flavor if visible, then a dash or comma, then shelf position (e.g. middle shelf on the right). '
+          'Put one line break after each distinct product or flavor.';
     } else if (singleTarget != null) {
       question =
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
           'Check if any visible product visually matches "${singleTarget.name}" (include the exact type or flavor if that matters, not only the brand). '
-          'If it matches, list every distinct flavor or variant you can see that fits this product, one product per line. '
-          'Each line must be: full product name including flavor or variant, then a dash or comma, then that item’s shelf position (phrases like top shelf on the left or middle shelf on the right). '
-          'Put one line break after each product. '
+          'If it matches, list each distinct flavor or variant of that product you can see—one line per flavor only, not one line per identical can or bottle. '
+          'Each line: full product name including flavor, then a dash or comma, then shelf position (phrases like top shelf on the left or middle shelf on the right). '
           'End with: ITEM FOUND. '
-          'If nothing matches, say: MOVE ALONG, NO ITEMS FOUND. '
-          'Be concise but do not skip extra flavors.';
+          'If nothing matches, say only: NO ITEMS FOUND. '
+          'Do not write MOVE ALONG in your answer.';
     } else {
       final quoted = targets.map((t) => '"${t.name}"').join(', ');
       question =
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
           'The shopper is looking for ALL of these list items on this shelf at the same time: $quoted. '
-          'For each list item you can clearly see (any matching package or flavor), output exactly one line: '
-          'full product name including variant if visible, then a dash or comma, then that item’s shelf position '
+          'For each list item you can clearly see, output at most one line per distinct flavor (not one line per identical unit). '
+          'Each line: full product name including variant if visible, then a dash or comma, then shelf position '
           '(phrases like top shelf on the left or middle shelf on the right). '
-          'Only include lines for products that correspond to the list items above. One line per list item you can see. '
+          'Only include lines for products that match the list items above. '
           'If you can see at least one of these list items, end with: ITEM FOUND. '
-          'If none of these list items are visible, say: MOVE ALONG, NO ITEMS FOUND.';
+          'If none of these list items are visible, say only: NO ITEMS FOUND. '
+          'Do not write MOVE ALONG in your answer.';
     }
 
     final vlmAnswer = await _runVlmPredict(bytes, question: question);
@@ -1065,19 +1145,16 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     final bool multiShelf = targets.length > 1;
     String shelfUser;
     if (multiShelf) {
-      shelfUser = _buildShelfStatusMessage(
-        vlmAnswer: vlmAnswer,
-        matchedNames: matchedNames,
-        target: null,
-        targetFound: false,
-      );
       final wanted = _englishNameList(targets.map((e) => e.name).toList());
       if (foundTargets.isEmpty) {
         shelfUser =
-            'Could not confirm $wanted on this shelf. Move along or tap Scan Shelf to try again.\n\n$shelfUser';
+            'Could not confirm $wanted on this shelf. Tap Scan Shelf to try again.';
       } else {
         final got = _englishNameList(foundTargets.map((e) => e.name).toList());
-        shelfUser = 'Spotted list items: $got.\n\n$shelfUser';
+        final deduped = _shelfDisplayFromVlmAnswer(vlmAnswer);
+        shelfUser = deduped.isEmpty
+            ? 'Spotted list items: $got.'
+            : 'Spotted list items: $got.\n\nOn this shelf: $deduped';
       }
     } else if (singleTarget != null) {
       final targetFound = foundTargets.isNotEmpty;
@@ -1479,8 +1556,8 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                     ] else ...[
                       const Text(
                         'Type the aisle name, or tap the microphone and say/spell the word '
-                        '(for example: "dairy" or "d-a-i-r-y"). '
-                        ,style: TextStyle(fontSize: 22, height: 1.3),
+                        '(for example: "dairy" or "d-a-i-r-y"). ',
+                        style: TextStyle(fontSize: 22, height: 1.3),
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -1567,7 +1644,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                         'Allow the microphone if your browser asks. Wait after '
                         'the beep, then speak clearly, or spell the aisle. You should '
                         'see words appear.'
-                        'Tap Stop listening when finished.',
+                        ' Tap Stop listening when finished.',
                         style: TextStyle(fontSize: 17, color: Colors.white60),
                       ),
                     ],
@@ -2441,7 +2518,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                 ),
                 child: Text(
                   shouldShowMoveAlongRescan
-                      ? 'Move Along Aisle & Re-Scan'
+                      ? 'Move Along Aisle & Re\u2011Scan'
                       : 'Scan Shelf',
                 ),
               ),
