@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'grocery_list_screen.dart';
+import 'grocery_ui.dart';
 import 'main.dart';
 import 'profile_setup_screen.dart';
 
@@ -122,133 +123,156 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       appBar: AppBar(
         title: Text(_isSignup ? 'Welcome' : 'Welcome Back'),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Semantics(
-                    label: 'Low Vision Daily Companion',
-                    child: Image.asset(
-                      'assets/images/app_logo.png',
-                      height: 160,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    _isSignup
-                        ? 'Create an account to get started'
-                        : 'Sign in to continue',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: Colors.white60),
-                  ),
-                  const SizedBox(height: 32),
-                  if (_errorMessage != null) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.error.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: theme.textTheme.bodyLarge
-                            ?.copyWith(color: theme.colorScheme.error),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                  if (_isSignup) ...[
-                    TextFormField(
-                      controller: _fullNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Full name',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      style: theme.textTheme.bodyLarge,
-                    ),
-                    const SizedBox(height: 18),
-                  ],
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                    style: theme.textTheme.bodyLarge,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Email is required';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
-                    style: theme.textTheme.bodyLarge,
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 28),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _submit,
-                    child: _loading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: Colors.black,
+      body: GroceryAmbientBackdrop(
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: groceryMaxContentWidth(context),
+              ),
+              child: SingleChildScrollView(
+                padding: groceryPagePadding(context).add(
+                  const EdgeInsets.symmetric(vertical: 28),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Semantics(
+                        label: 'Low Vision Daily Companion',
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(28),
+                            boxShadow: [
+                              BoxShadow(
+                                color: kBrandPurpleMid.withValues(alpha: 0.35),
+                                blurRadius: 32,
+                                spreadRadius: -8,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Image.asset(
+                              'assets/images/app_logo.png',
+                              height: 140,
+                              fit: BoxFit.contain,
                             ),
-                          )
-                        : Text(_isSignup ? 'Create Account' : 'Sign In'),
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _loading
-                        ? null
-                        : () {
-                            setState(() {
-                              _isSignup = !_isSignup;
-                              _errorMessage = null;
-                            });
-                          },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      textStyle: theme.textTheme.bodyMedium,
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        _isSignup
-                            ? 'Already have an account? Log in'
-                            : 'Need an account? Sign up',
-                        maxLines: 1,
-                        textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+                      Text(
+                        _isSignup
+                            ? 'Create an account to get started'
+                            : 'Sign in to continue',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyLarge
+                            ?.copyWith(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 28),
+                      if (_errorMessage != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.error
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _errorMessage!,
+                            style: theme.textTheme.bodyLarge
+                                ?.copyWith(color: theme.colorScheme.error),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                      if (_isSignup) ...[
+                        TextFormField(
+                          controller: _fullNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Full name',
+                            prefixIcon: Icon(Icons.person_outline),
+                          ),
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                        style: theme.textTheme.bodyLarge,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Email is required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
+                        style: theme.textTheme.bodyLarge,
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 28),
+                      GroceryGlowButton(
+                        onPressed: _loading ? null : _submit,
+                        child: _loading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color: Colors.black,
+                                ),
+                              )
+                            : Text(_isSignup ? 'Create Account' : 'Sign In'),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: _loading
+                            ? null
+                            : () {
+                                setState(() {
+                                  _isSignup = !_isSignup;
+                                  _errorMessage = null;
+                                });
+                              },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          textStyle: theme.textTheme.bodyMedium,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _isSignup
+                                ? 'Already have an account? Log in'
+                                : 'Need an account? Sign up',
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_colors.dart';
+import 'grocery_ui.dart';
 import 'take_picture_screen.dart';
 import 'supabase_auth_screen.dart';
 import 'grocery_list_screen.dart';
@@ -62,6 +63,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: _colorScheme,
         useMaterial3: true,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: OpenUpwardsPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: OpenUpwardsPageTransitionsBuilder(),
+            TargetPlatform.linux: OpenUpwardsPageTransitionsBuilder(),
+            TargetPlatform.windows: OpenUpwardsPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
         textTheme: textTheme,
         fontFamilyFallback: const ['Atkinson Hyperlegible', 'Roboto'],
         scaffoldBackgroundColor: kBrandCanvas,
@@ -78,10 +89,12 @@ class MyApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF6D5EF5),
             foregroundColor: const Color(0xFFF5F7FA),
+            elevation: 0,
+            shadowColor: const Color(0xFF6D5EF5).withValues(alpha: 0.45),
             minimumSize: const Size(double.infinity, 56),
             textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
+                borderRadius: BorderRadius.circular(18)),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
@@ -94,10 +107,13 @@ class MyApp extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16)),
           ),
         ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Color(0xFF6D5EF5),
-          foregroundColor: Color(0xFFF5F7FA),
-          largeSizeConstraints: BoxConstraints.tightFor(width: 72, height: 72),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: const Color(0xFF6D5EF5),
+          foregroundColor: const Color(0xFFF5F7FA),
+          elevation: 4,
+          highlightElevation: 8,
+          largeSizeConstraints:
+              const BoxConstraints.tightFor(width: 72, height: 72),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
@@ -214,8 +230,14 @@ class _ProfileGateState extends State<_ProfileGate> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      body: GroceryAmbientBackdrop(
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
     );
   }
 }

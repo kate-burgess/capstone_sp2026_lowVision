@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'grocery_list_screen.dart';
+import 'grocery_ui.dart';
 import 'main.dart';
 
 /// Used both for initial profile setup (after signup) and for editing an
@@ -163,7 +164,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             widget.isEditing ? 'Edit profile' : 'Set up your profile',
           ),
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: GroceryAmbientBackdrop(
+          child: const Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
@@ -179,155 +182,183 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               )
             : null,
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.isEditing
-                      ? 'Update your profile'
-                      : 'Tell us about yourself',
-                  style: theme.textTheme.headlineMedium,
+      body: GroceryAmbientBackdrop(
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: groceryMaxContentWidth(context),
+              ),
+              child: SingleChildScrollView(
+                padding: groceryPagePadding(context).add(
+                  const EdgeInsets.symmetric(vertical: 24),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'This helps personalise your grocery lists.',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: Colors.white60),
-                ),
-                const SizedBox(height: 28),
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full name',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  style: theme.textTheme.bodyLarge,
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 32),
-                Text('Dietary preferences', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 6),
-                Text(
-                  'Select all that apply',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: Colors.white60),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 8,
-                  children: _dietOptions.map((opt) {
-                    final selected = _selectedDiet.contains(opt);
-                    return FilterChip(
-                      label: Text(opt),
-                      selected: selected,
-                      onSelected: (v) => setState(() {
-                        if (v) {
-                          if (opt == 'No restrictions') {
-                            _selectedDiet.clear();
-                          } else {
-                            _selectedDiet.remove('No restrictions');
-                          }
-                          _selectedDiet.add(opt);
-                        } else {
-                          _selectedDiet.remove(opt);
-                        }
-                      }),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 32),
-                Text('Allergies', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 6),
-                Text(
-                  'Select all that apply',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: Colors.white60),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 8,
-                  children: _allergyOptions.map((opt) {
-                    final selected = _selectedAllergies.contains(opt);
-                    return FilterChip(
-                      label: Text(opt),
-                      selected: selected,
-                      onSelected: (v) => setState(() {
-                        if (v) {
-                          if (opt == 'None') {
-                            _selectedAllergies.clear();
-                          } else {
-                            _selectedAllergies.remove('None');
-                          }
-                          _selectedAllergies.add(opt);
-                        } else {
-                          _selectedAllergies.remove(opt);
-                        }
-                      }),
-                      selectedColor:
-                          theme.colorScheme.error.withValues(alpha: 0.3),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 32),
-                if (_error != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color:
-                          theme.colorScheme.error.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _error!,
-                      style: theme.textTheme.bodyLarge
-                          ?.copyWith(color: theme.colorScheme.error),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                ElevatedButton(
-                  onPressed: _saving ? null : _save,
-                  child: _saving
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: Colors.black,
-                          ),
-                        )
-                      : Text(
-                          widget.isEditing
-                              ? 'Save Changes'
-                              : 'Save and Continue',
-                        ),
-                ),
-                const SizedBox(height: 16),
-                if (!widget.isEditing)
-                  Center(
-                    child: TextButton(
-                      onPressed: _saving
-                          ? null
-                          : () => Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (_) => const GroceryListScreen(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const GroceryProfilePersonBadge(size: 76),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.isEditing
+                                    ? 'Edit Profile'
+                                    : 'Profile Setup',
+                                style: theme.textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                      style: TextButton.styleFrom(
-                        textStyle: theme.textTheme.bodyMedium,
-                      ),
-                      child: const Text('Skip for now'),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Help us personalize your experience',
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(color: Colors.white60),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-              ],
+                    const SizedBox(height: 28),
+                    TextField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Your name',
+                        hintText: 'Enter your name',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                      style: theme.textTheme.bodyLarge,
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Dietary preferences',
+                      style: theme.textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Select all that apply',
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: Colors.white60),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: _dietOptions.map((opt) {
+                        final selected = _selectedDiet.contains(opt);
+                        return FilterChip(
+                          label: Text(opt),
+                          selected: selected,
+                          onSelected: (v) => setState(() {
+                            if (v) {
+                              if (opt == 'No restrictions') {
+                                _selectedDiet.clear();
+                              } else {
+                                _selectedDiet.remove('No restrictions');
+                              }
+                              _selectedDiet.add(opt);
+                            } else {
+                              _selectedDiet.remove(opt);
+                            }
+                          }),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+                    Text('Allergies', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Select all that apply',
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: Colors.white60),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: _allergyOptions.map((opt) {
+                        final selected = _selectedAllergies.contains(opt);
+                        return FilterChip(
+                          label: Text(opt),
+                          selected: selected,
+                          onSelected: (v) => setState(() {
+                            if (v) {
+                              if (opt == 'None') {
+                                _selectedAllergies.clear();
+                              } else {
+                                _selectedAllergies.remove('None');
+                              }
+                              _selectedAllergies.add(opt);
+                            } else {
+                              _selectedAllergies.remove(opt);
+                            }
+                          }),
+                          selectedColor:
+                              theme.colorScheme.error.withValues(alpha: 0.3),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+                    if (_error != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.error
+                              .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _error!,
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(color: theme.colorScheme.error),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    GroceryGlowButton(
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: Colors.black,
+                              ),
+                            )
+                          : Text(
+                              widget.isEditing
+                                  ? 'Save Changes'
+                                  : 'Save & Continue',
+                            ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (!widget.isEditing)
+                      Center(
+                        child: TextButton(
+                          onPressed: _saving
+                              ? null
+                              : () => Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (_) => const GroceryListScreen(),
+                                    ),
+                                  ),
+                          style: TextButton.styleFrom(
+                            textStyle: theme.textTheme.bodyMedium,
+                          ),
+                          child: const Text('Skip for now'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
