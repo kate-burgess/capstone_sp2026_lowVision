@@ -1462,12 +1462,12 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                           'FOR STORE EMPLOYEE\n\n'
                           'Please look at this screen. The shopper needs the '
                           'aisle location.\n\n'
-                          'Wait for the beep before speaking. Spell the aisle '
+                          'Wait for the beep before speaking. Clearly speak or spell the aisle '
                           'letter by letter if you use the microphone (for example '
                           'T, E, A for tea).\n\n'
                           'Type the aisle name below, or tap the microphone and '
                           'say the aisle you are in (for example: "Bakery" or '
-                          '"Dairy"). That name will be set in the app.',
+                          '"Dairy").',
                           style: TextStyle(
                             fontSize: 22,
                             height: 1.35,
@@ -1478,10 +1478,9 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       const SizedBox(height: 20),
                     ] else ...[
                       const Text(
-                        'Type the aisle name, or tap the microphone and say it '
-                        '(for example: "dairy" or "bakery"). Names only—no aisle '
-                        'numbers.',
-                        style: TextStyle(fontSize: 22, height: 1.3),
+                        'Type the aisle name, or tap the microphone and say/spell the word '
+                        '(for example: "dairy" or "d-a-i-r-y"). '
+                        ,style: TextStyle(fontSize: 22, height: 1.3),
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -1566,9 +1565,9 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                       const SizedBox(height: 8),
                       const Text(
                         'Allow the microphone if your browser asks. Wait after '
-                        'the beep, then speak clearly, or spell the aisle—you should '
+                        'the beep, then speak clearly, or spell the aisle. You should '
                         'see words appear.'
-                        '; tap Stop listening when finished.',
+                        'Tap Stop listening when finished.',
                         style: TextStyle(fontSize: 17, color: Colors.white60),
                       ),
                     ],
@@ -1718,7 +1717,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
       case _kMenuAisle:
         return _largeMenuButton(
           label: 'Set aisle name',
-          semanticLabel: 'Type or speak the aisle name (no aisle numbers)',
+          semanticLabel: 'Type or speak the aisle name',
           icon: Icons.mic,
           onPressed: _loading ? null : _openSayAisleFromMenu,
         );
