@@ -256,9 +256,18 @@ String _stripDescriptionPriceLinesFromShelfText(String s) {
       .join('\n');
 }
 
+/// Model sometimes emits "Item: Pepsi … Location: …" on one line; split labels so parsing fills fields correctly.
+String _normalizeGluedShelfFieldLines(String block) {
+  return block.replaceAllMapped(
+    RegExp(r'\s+(Location|Flavor|Flavour|Size)\s*:', caseSensitive: false),
+    (m) => '\n${m[1]}:',
+  );
+}
+
 _ShelfProductBlock? _parseShelfProductBlock(String block) {
+  final normalizedBlock = _normalizeGluedShelfFieldLines(block.trim());
   String? item, location, flavor, size;
-  for (final raw in block.split(RegExp(r'\r?\n'))) {
+  for (final raw in normalizedBlock.split(RegExp(r'\r?\n'))) {
     final line = raw.trim();
     if (line.isEmpty) continue;
     final m = _kShelfFieldLine.firstMatch(line);
@@ -333,6 +342,13 @@ const _prefsVlmMenuOrder = 'vlm_shopping_menu_order_v1';
 
 const _kUnreadableAisleMessage =
     'I could not read the aisle sign. Please retake the photo. If needed, tap Get Help from store employee.';
+
+/// Opening instructions so non–grocery-store photos yield [NO ITEMS FOUND], not hallucinated products.
+const _kShelfSceneGatePreamble =
+    'First, decide whether this photo clearly shows grocery or beverage shelving with retail products in a store. '
+    'If it shows anything else (such as a vehicle interior, a room, outdoor scenery, people, pets, or clutter without clear shelf products), '
+    'respond with exactly this single line and nothing else: NO ITEMS FOUND\n'
+    'If it does show appropriate shelving, continue:\n';
 
 /// Shelf-scan VLM: fixed labels per product; omit optional lines when unknown.
 const _kShelfStructuredFormat =
@@ -849,12 +865,23 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     return _finalizeShelfDisplayText(cleaned);
   }
 
+  /// Model was instructed to answer with only NO ITEMS FOUND for non-shelf photos.
+  bool _vlmPhotoRejectedNonShelf(String vlmAnswer) {
+    final head =
+        vlmAnswer.trim().split(RegExp(r'\r?\n')).first.trim().toUpperCase();
+    return head == 'NO ITEMS FOUND' || head.startsWith('NO ITEMS FOUND ');
+  }
+
   String _buildShelfStatusMessage({
     required String vlmAnswer,
     required String matchedNames,
     required _Item? target,
     required bool targetFound,
   }) {
+    if (_vlmPhotoRejectedNonShelf(vlmAnswer)) {
+      return 'This photo does not look like a grocery shelf. Point the camera at the '
+          'shelf products and tap Scan Shelf again.';
+    }
     final cleanedRaw = _vlmAnswerWithoutFoundTags(vlmAnswer);
     final cleaned = _finalizeShelfDisplayText(
       _normalizeNoneItemCaption(
@@ -1056,12 +1083,16 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
                 .hasMatch(vlmAnswer) ||
             RegExp(r'\bMOVE\s+ALONG\b', caseSensitive: false)
                 .hasMatch(vlmAnswer));
-    final vlmSaysFound = taggedFound ||
-        (!explicitNeg && _vlmAnswerMatchesTarget(vlmAnswer, target));
     final answerNamesTarget = _vlmAnswerMatchesTarget(vlmAnswer, target);
     final answerRejectsTarget = _vlmExplicitlyRejectsTarget(vlmAnswer, target);
     final targetOnShelfByOcr =
         _itemMatchesText(target, _tokenize(shelfText));
+    // Require explicit ITEM FOUND OR OCR overlap with the list item. Pure name
+    // fuzzy-match on VLM text alone caused false positives (e.g. car photo → soda).
+    final vlmSaysFound = taggedFound ||
+        (!explicitNeg &&
+            targetOnShelfByOcr &&
+            _vlmAnswerMatchesTarget(vlmAnswer, target));
     final shelfMatchesOtherListItem =
         shelfMatches.any((i) => !identical(i, target));
     return vlmSaysFound &&
@@ -1259,12 +1290,14 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     String question;
     if (targets.isEmpty) {
       question =
+          _kShelfSceneGatePreamble
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
           'List each distinct branded product you can clearly see (each different flavor or variety is its own block). '
           '$_kShelfStructuredFormat '
           'If many facings are the same flavor, describe it once—do not repeat the same flavor for each physical unit.';
     } else if (singleTarget != null) {
       question =
+          _kShelfSceneGatePreamble
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
           'Check if any visible product visually matches "${singleTarget.name}" (include the exact type or flavor if that matters, not only the brand). '
           'If it matches, list each distinct flavor or variant you can see—one block per flavor, not one block per identical can or bottle. '
@@ -1275,6 +1308,7 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     } else {
       final quoted = targets.map((t) => '"${t.name}"').join(', ');
       question =
+          _kShelfSceneGatePreamble
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
           'The shopper is looking for ALL of these list items on this shelf at the same time: $quoted. '
           'For each list item you can clearly see, output at most one block per distinct flavor (not one block per identical unit). '
