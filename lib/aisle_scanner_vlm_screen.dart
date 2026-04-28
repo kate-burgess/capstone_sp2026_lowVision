@@ -1290,33 +1290,33 @@ class _AisleScannerVlmScreenState extends State<AisleScannerVlmScreen> {
     String question;
     if (targets.isEmpty) {
       question =
-          _kShelfSceneGatePreamble
+          _kShelfSceneGatePreamble +
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
-          'List each distinct branded product you can clearly see (each different flavor or variety is its own block). '
-          '$_kShelfStructuredFormat '
-          'If many facings are the same flavor, describe it once—do not repeat the same flavor for each physical unit.';
+              'List each distinct branded product you can clearly see (each different flavor or variety is its own block). '
+              '$_kShelfStructuredFormat '
+              'If many facings are the same flavor, describe it once—do not repeat the same flavor for each physical unit.';
     } else if (singleTarget != null) {
       question =
-          _kShelfSceneGatePreamble
+          _kShelfSceneGatePreamble +
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
-          'Check if any visible product visually matches "${singleTarget.name}" (include the exact type or flavor if that matters, not only the brand). '
-          'If it matches, list each distinct flavor or variant you can see—one block per flavor, not one block per identical can or bottle. '
-          '$_kShelfStructuredFormat '
-          'End with: ITEM FOUND. '
-          'If nothing matches, say only: NO ITEMS FOUND. '
-          'Do not write MOVE ALONG in your answer.';
+              'Check if any visible product visually matches "${singleTarget.name}" (include the exact type or flavor if that matters, not only the brand). '
+              'If it matches, list each distinct flavor or variant you can see—one block per flavor, not one block per identical can or bottle. '
+              '$_kShelfStructuredFormat '
+              'End with: ITEM FOUND. '
+              'If nothing matches, say only: NO ITEMS FOUND. '
+              'Do not write MOVE ALONG in your answer.';
     } else {
       final quoted = targets.map((t) => '"${t.name}"').join(', ');
       question =
-          _kShelfSceneGatePreamble
+          _kShelfSceneGatePreamble +
           'Do NOT read any text, labels, or signs. Use only visual appearance. '
-          'The shopper is looking for ALL of these list items on this shelf at the same time: $quoted. '
-          'For each list item you can clearly see, output at most one block per distinct flavor (not one block per identical unit). '
-          '$_kShelfStructuredFormat '
-          'Only include blocks for products that match the list items above. '
-          'If you can see at least one of these list items, end with: ITEM FOUND. '
-          'If none of these list items are visible, say only: NO ITEMS FOUND. '
-          'Do not write MOVE ALONG in your answer.';
+              'The shopper is looking for ALL of these list items on this shelf at the same time: $quoted. '
+              'For each list item you can clearly see, output at most one block per distinct flavor (not one block per identical unit). '
+              '$_kShelfStructuredFormat '
+              'Only include blocks for products that match the list items above. '
+              'If you can see at least one of these list items, end with: ITEM FOUND. '
+              'If none of these list items are visible, say only: NO ITEMS FOUND. '
+              'Do not write MOVE ALONG in your answer.';
     }
 
     final vlmAnswer = await _runVlmPredict(bytes, question: question);
